@@ -394,6 +394,16 @@
         let priorityChart = null;
         let outcomeChart = null;
 
+        // DOM REFERENCES
+        const stateSelector = document.getElementById('stateSelector');
+        const roleSelector = document.getElementById('roleSelector');
+        const chatArea = document.getElementById('chatArea');
+        const chatInput = document.getElementById('chatInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const factContent = document.getElementById('factContent');
+        const voterGuideBtn = document.getElementById('voterGuideBtn');
+        const closeGuide = document.getElementById('closeGuide');
+
         // UI HELPERS
         function updateStateUI(state) {
             const profile = STATE_PROFILES[state] || "urban";
@@ -440,6 +450,18 @@
             });
         }
 
+        function calculateSimScore(turnout, misinfo, satisfaction, opposition, issues) {
+            let govtScore = (satisfaction * 0.4) + ((100 - misinfo) * 0.3) + (turnout * 0.3);
+            let oppScore = (opposition * 0.4) + (issues * 0.4) + (misinfo * 0.2);
+            let otherScore = ((100 - turnout) * 0.5) + ((100 - satisfaction) * 0.5);
+            const total = govtScore + oppScore + otherScore;
+            return {
+                govtPct: Math.round((govtScore / total) * 100),
+                oppPct: Math.round((oppScore / total) * 100),
+                otherPct: 100 - Math.round((govtScore / total) * 100) - Math.round((oppScore / total) * 100)
+            };
+        }
+
         function runSimulation() {
             const turnout = parseInt(document.getElementById('sim-turnout').value);
             const misinfo = parseInt(document.getElementById('sim-misinfo').value);
@@ -447,26 +469,17 @@
             const opposition = parseInt(document.getElementById('sim-opposition').value);
             const issues = parseInt(document.getElementById('sim-issues').value);
 
-            // Weights
-            let govtScore = (satisfaction * 0.4) + ((100 - misinfo) * 0.3) + (turnout * 0.3);
-            let oppScore = (opposition * 0.4) + (issues * 0.4) + (misinfo * 0.2);
-            let otherScore = ((100 - turnout) * 0.5) + ((100 - satisfaction) * 0.5);
-
-            // Normalize to 100%
-            const total = govtScore + oppScore + otherScore;
-            const govtPct = Math.round((govtScore / total) * 100);
-            const oppPct = Math.round((oppScore / total) * 100);
-            const otherPct = 100 - govtPct - oppPct;
-
-            outcomeChart.data.datasets[0].data = [govtPct, oppPct, otherPct];
+            const scores = calculateSimScore(turnout, misinfo, satisfaction, opposition, issues);
+            
+            outcomeChart.data.datasets[0].data = [scores.govtPct, scores.oppPct, scores.otherPct];
             outcomeChart.update();
 
             // Results UI
-            const winner = govtPct > oppPct ? (govtPct > otherPct ? "Government" : "Others") : (oppPct > otherPct ? "Opposition" : "Others");
+            const winner = scores.govtPct > scores.oppPct ? (scores.govtPct > scores.otherPct ? "Government" : "Others") : (scores.oppPct > scores.otherPct ? "Opposition" : "Others");
             document.getElementById('simWinner').textContent = winner;
             document.getElementById('simWinner').className = `text-xl font-bold ${winner === 'Government' ? 'text-blue-400' : 'text-purple-400'}`;
 
-            const stability = turnout > 70 && Math.abs(govtPct - oppPct) > 10 ? "High" : (turnout < 40 ? "Low" : "Medium");
+            const stability = turnout > 70 && Math.abs(scores.govtPct - scores.oppPct) > 10 ? "High" : (turnout < 40 ? "Low" : "Medium");
             document.getElementById('simStability').textContent = stability;
             document.getElementById('simStability').className = `text-xl font-bold ${stability === 'High' ? 'text-green-400' : (stability === 'Low' ? 'text-red-400' : 'text-yellow-400')}`;
 
@@ -604,6 +617,9 @@
             const journeyMessage = document.getElementById('journeyMessage');
             const stepIndicator = document.getElementById('stepIndicator');
             const stepProgress = document.getElementById('stepProgress');
+            const journeyStepTitle = document.getElementById('journeyStepTitle');
+            const journeyStepDesc = document.getElementById('journeyStepDesc');
+            const journeyWhyText = document.getElementById('journeyWhyText');
 
             journeyStepTitle.textContent = `Step ${journeyStep + 1}: ${data.title}`;
             journeyStepDesc.textContent = data.desc;
