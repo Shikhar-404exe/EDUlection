@@ -36,7 +36,7 @@ app.post('/api/chat', async (req, res) => {
     const { message, role } = req.body;
     try {
         const response = await axios.post(OPENROUTER_URL, {
-            model: "google/gemini-flash-1.5",
+            model: "openai/gpt-3.5-turbo",
             messages: [
                 { role: "system", content: `${SYSTEM_PROMPT} Current User Role: ${role}` },
                 { role: "user", content: message }
@@ -61,7 +61,7 @@ app.post('/api/verify', async (req, res) => {
     const { claim } = req.body;
     try {
         const response = await axios.post(OPENROUTER_URL, {
-            model: "google/gemini-flash-1.5",
+            model: "openai/gpt-3.5-turbo",
             messages: [
                 { 
                     role: "system", 
