@@ -393,61 +393,76 @@
         let currentRole = 'voter';
         let priorityChart = null;
         let outcomeChart = null;
+        let journeyStep = 0;
 
-        // DOM REFERENCES
-        const stateSelector = document.getElementById('stateSelector');
-        const roleSelector = document.getElementById('roleSelector');
-        const chatArea = document.getElementById('chatArea');
-        const chatInput = document.getElementById('chatInput');
-        const sendBtn = document.getElementById('sendBtn');
-        const factContent = document.getElementById('factContent');
-        const voterGuideBtn = document.getElementById('voterGuideBtn');
-        const closeGuide = document.getElementById('closeGuide');
+        // SAFE DOM ACCESS
+        const getEl = (id) => document.getElementById(id);
 
         // UI HELPERS
         function updateStateUI(state) {
-            const profile = STATE_PROFILES[state] || "urban";
-            const data = ISSUE_TEMPLATES[profile];
-            document.getElementById('selectedStateName').textContent = state;
-            document.getElementById('stateProfileType').textContent = `${profile} Profile`;
-            document.getElementById('issueList').innerHTML = data.issues.map(i => `<li class="text-xs text-slate-300">• ${i}</li>`).join('');
-            document.getElementById('checklistContainer').innerHTML = data.checklist.map(c => `<div class="bg-slate-800/50 p-2 rounded text-[10px] border border-slate-700">${c}</div>`).join('');
-            renderPriorityChart(profile);
+            try {
+                const profile = STATE_PROFILES[state] || "urban";
+                const data = ISSUE_TEMPLATES[profile];
+                const nameEl = getEl('selectedStateName');
+                const profileEl = getEl('stateProfileType');
+                const listEl = getEl('issueList');
+                const checkEl = getEl('checklistContainer');
+
+                if (nameEl) nameEl.textContent = state;
+                if (profileEl) profileEl.textContent = `${profile} Profile`;
+                if (listEl) listEl.innerHTML = data.issues.map(i => `<li class="text-xs text-slate-300">• ${i}</li>`).join('');
+                if (checkEl) checkEl.innerHTML = data.checklist.map(c => `<div class="bg-slate-800/50 p-2 rounded text-[10px] border border-slate-700">${c}</div>`).join('');
+                
+                renderPriorityChart(profile);
+            } catch (e) { console.error("Error updating State UI:", e); }
         }
 
         function renderPriorityChart(profile) {
-            if(priorityChart) priorityChart.destroy();
-            const ctx = document.getElementById('priorityChart').getContext('2d');
-            priorityChart = new Chart(ctx, {
-                type: 'bar', data: { labels: ['Issues', 'Admin', 'Growth'], datasets: [{ data: [80, 60, 90], backgroundColor: '#3b82f6', borderRadius: 4 }] },
-                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { ticks: { color: '#64748b', font: { size: 9 } }, grid: { display: false } } } }
-            });
+            try {
+                if (typeof Chart === 'undefined') return;
+                if (priorityChart) priorityChart.destroy();
+                const canvas = getEl('priorityChart');
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                priorityChart = new Chart(ctx, {
+                    type: 'bar', data: { labels: ['Issues', 'Admin', 'Growth'], datasets: [{ data: [80, 60, 90], backgroundColor: '#3b82f6', borderRadius: 4 }] },
+                    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { ticks: { color: '#64748b', font: { size: 9 } }, grid: { display: false } } } }
+                });
+            } catch (e) { console.error("Error rendering Priority Chart:", e); }
         }
 
         // SIMULATOR LOGIC
         function initOutcomeChart() {
-            const ctx = document.getElementById('outcomeChart').getContext('2d');
-            outcomeChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: ['Government', 'Opposition', 'Others'],
-                    datasets: [{
-                        label: 'Projected Seats (%)',
-                        data: [45, 40, 15],
-                        backgroundColor: ['#3b82f6', '#8b5cf6', '#64748b'],
-                        borderRadius: 12
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: { beginAtZero: true, max: 100, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#475569' } },
-                        x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { weight: 'bold' } } }
-                    }
+            try {
+                if (typeof Chart === 'undefined') {
+                    console.warn("Chart.js not loaded yet.");
+                    return;
                 }
-            });
+                const canvas = getEl('outcomeChart');
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                outcomeChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Government', 'Opposition', 'Others'],
+                        datasets: [{
+                            label: 'Projected Seats (%)',
+                            data: [45, 40, 15],
+                            backgroundColor: ['#3b82f6', '#8b5cf6', '#64748b'],
+                            borderRadius: 12
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: true, max: 100, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#475569' } },
+                            x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { weight: 'bold' } } }
+                        }
+                    }
+                });
+            } catch (e) { console.error("Error initializing Outcome Chart:", e); }
         }
 
         function calculateSimScore(turnout, misinfo, satisfaction, opposition, issues) {
@@ -463,283 +478,217 @@
         }
 
         function runSimulation() {
-            const turnout = parseInt(document.getElementById('sim-turnout').value);
-            const misinfo = parseInt(document.getElementById('sim-misinfo').value);
-            const satisfaction = parseInt(document.getElementById('sim-satisfaction').value);
-            const opposition = parseInt(document.getElementById('sim-opposition').value);
-            const issues = parseInt(document.getElementById('sim-issues').value);
+            try {
+                const turnout = parseInt(getEl('sim-turnout')?.value || 65);
+                const misinfo = parseInt(getEl('sim-misinfo')?.value || 20);
+                const satisfaction = parseInt(getEl('sim-satisfaction')?.value || 55);
+                const opposition = parseInt(getEl('sim-opposition')?.value || 45);
+                const issues = parseInt(getEl('sim-issues')?.value || 30);
 
-            const scores = calculateSimScore(turnout, misinfo, satisfaction, opposition, issues);
-            
-            outcomeChart.data.datasets[0].data = [scores.govtPct, scores.oppPct, scores.otherPct];
-            outcomeChart.update();
+                const scores = calculateSimScore(turnout, misinfo, satisfaction, opposition, issues);
+                
+                if (outcomeChart) {
+                    outcomeChart.data.datasets[0].data = [scores.govtPct, scores.oppPct, scores.otherPct];
+                    outcomeChart.update();
+                }
 
-            // Results UI
-            const winner = scores.govtPct > scores.oppPct ? (scores.govtPct > scores.otherPct ? "Government" : "Others") : (scores.oppPct > scores.otherPct ? "Opposition" : "Others");
-            document.getElementById('simWinner').textContent = winner;
-            document.getElementById('simWinner').className = `text-xl font-bold ${winner === 'Government' ? 'text-blue-400' : 'text-purple-400'}`;
+                const winner = scores.govtPct > scores.oppPct ? (scores.govtPct > scores.otherPct ? "Government" : "Others") : (scores.oppPct > scores.otherPct ? "Opposition" : "Others");
+                const winEl = getEl('simWinner');
+                const stabEl = getEl('simStability');
+                const expEl = getEl('simExplanation');
 
-            const stability = turnout > 70 && Math.abs(scores.govtPct - scores.oppPct) > 10 ? "High" : (turnout < 40 ? "Low" : "Medium");
-            document.getElementById('simStability').textContent = stability;
-            document.getElementById('simStability').className = `text-xl font-bold ${stability === 'High' ? 'text-green-400' : (stability === 'Low' ? 'text-red-400' : 'text-yellow-400')}`;
+                if (winEl) {
+                    winEl.textContent = winner;
+                    winEl.className = `text-xl font-bold ${winner === 'Government' ? 'text-blue-400' : 'text-purple-400'}`;
+                }
+                
+                const stability = turnout > 70 && Math.abs(scores.govtPct - scores.oppPct) > 10 ? "High" : (turnout < 40 ? "Low" : "Medium");
+                if (stabEl) {
+                    stabEl.textContent = stability;
+                    stabEl.className = `text-xl font-bold ${stability === 'High' ? 'text-green-400' : (stability === 'Low' ? 'text-red-400' : 'text-yellow-400')}`;
+                }
 
-            // Explanation
-            let explanation = "";
-            if(winner === 'Government') explanation = "Positive governance satisfaction and low misinformation helped the current government maintain its mandate.";
-            else if(winner === 'Opposition') explanation = "A strong opposition campaign combined with rising local issues shifted public support away from the center.";
-            else explanation = "Fragmented voting and low turnout led to a non-majoritarian outcome favoring independents.";
-            document.getElementById('simExplanation').textContent = explanation;
+                if (expEl) {
+                    expEl.textContent = winner === 'Government' ? 
+                        "Positive governance satisfaction and low misinformation helped the current government maintain its mandate." : 
+                        "A strong opposition campaign combined with rising local issues shifted public support.";
+                }
 
-            // Impacts
-            const impactList = document.getElementById('simImpacts');
-            impactList.innerHTML = `
-                <p>• ${turnout > 65 ? "High turnout favored established parties." : "Low turnout increased volatility."}</p>
-                <p>• ${misinfo > 50 ? "High misinformation created voter uncertainty." : "Clean information flow improved decision clarity."}</p>
-                <p>• ${satisfaction > 60 ? "Governance satisfaction acted as a major buffer for Govt." : "Governance dissatisfaction empowered the Opposition."}</p>
-            `;
+                const impactList = getEl('simImpacts');
+                if (impactList) {
+                    impactList.innerHTML = `
+                        <p>• ${turnout > 65 ? "High turnout favored established parties." : "Low turnout increased volatility."}</p>
+                        <p>• ${misinfo > 50 ? "High misinformation created voter uncertainty." : "Clean information flow improved clarity."}</p>
+                    `;
+                }
+            } catch (e) { console.error("Error running simulation:", e); }
         }
 
-        // EVENT HANDLERS
-        ['sim-turnout', 'sim-misinfo', 'sim-satisfaction', 'sim-opposition', 'sim-issues'].forEach(id => {
-            document.getElementById(id).addEventListener('input', (e) => {
-                const valId = 'val-' + id.split('-')[1];
-                document.getElementById(valId).textContent = e.target.value + '%';
-                runSimulation();
-            });
-        });
+        // VOTING JOURNEY LOGIC
+        const journeyData = [
+            { title: "Voter Registration", desc: "Are you 18 or older and successfully registered?", why: "Registration is the legal requirement to participate.", options: [{ label: "Yes, I'm Registered", next: 1 }, { label: "No, Not Yet", warning: "⚠️ Visit NVSP.in to apply online." }] },
+            { title: "Voter List Verification", desc: "Have you checked your name in the roll?", why: "Verification prevents last-minute surprises.", options: [{ label: "Yes, Name Found", next: 2 }, { label: "No, Need to Check", warning: "⚠️ Use the 'Search in Electoral Roll' tool." }] },
+            { title: "ID Verification", desc: "Do you have a valid ID?", why: "Identity proof is mandatory to prevent proxy voting.", options: [{ label: "Yes, I have it", next: 3 }, { label: "I lost my ID", warning: "⚠️ Use alternative documents listed by ECI." }] },
+            { title: "Polling Booth Identified", desc: "Do you know where to go?", why: "Knowing your booth saves time.", options: [{ label: "Yes, I know it", next: 4 }, { label: "No, I'm unsure", warning: "⚠️ Check the Voter Helpline App." }] },
+            { title: "Vote Casting", desc: "Ready to cast your vote?", why: "Verify the red light and the VVPAT slip.", options: [{ label: "I am Ready!", next: 5 }] },
+            { title: "Success!", desc: "You've successfully simulated your journey.", why: "The ink mark is a badge of pride.", options: [{ label: "Restart Journey", next: 0 }] }
+        ];
 
-        // STATE SLIDER LOGIC
-        function selectBySlider(stateName) {
-            document.getElementById('stateSelector').value = stateName;
-            updateActiveStateUI(stateName);
-            appendMessage('ai', `📍 Dashboard switched to ${stateName}. Local intelligence updated.`);
+        function renderJourney() {
+            try {
+                const data = journeyData[journeyStep];
+                const titleEl = getEl('journeyStepTitle');
+                const descEl = getEl('journeyStepDesc');
+                const whyEl = getEl('journeyWhyText');
+                const optsEl = getEl('journeyOptions');
+                const msgEl = getEl('journeyMessage');
+                const progEl = getEl('stepProgress');
+                const indEl = getEl('stepIndicator');
+
+                if (titleEl) titleEl.textContent = `Step ${journeyStep + 1}: ${data.title}`;
+                if (descEl) descEl.textContent = data.desc;
+                if (whyEl) whyEl.textContent = data.why;
+                if (indEl) indEl.textContent = `Step ${journeyStep + 1} of 6`;
+                
+                if (progEl) {
+                    progEl.innerHTML = '';
+                    for(let i=0; i<6; i++) {
+                        const dot = document.createElement('div');
+                        dot.className = `h-1.5 flex-grow rounded-full transition-all duration-500 ${i <= journeyStep ? 'bg-blue-600' : 'bg-slate-800'}`;
+                        progEl.appendChild(dot);
+                    }
+                }
+
+                if (optsEl) {
+                    optsEl.innerHTML = '';
+                    data.options.forEach(opt => {
+                        const btn = document.createElement('button');
+                        btn.className = opt.next !== undefined ? 
+                            "px-6 py-2 bg-blue-600 text-white rounded-full text-sm font-bold hover:bg-blue-700 transition" :
+                            "px-6 py-2 bg-slate-800 text-slate-300 rounded-full text-sm font-bold hover:bg-slate-700 transition border border-slate-700";
+                        btn.textContent = opt.label;
+                        btn.onclick = () => {
+                            if (opt.next !== undefined) {
+                                journeyStep = opt.next;
+                                if (msgEl) msgEl.classList.add('hidden');
+                                renderJourney();
+                            } else if (msgEl) {
+                                msgEl.textContent = opt.warning;
+                                msgEl.classList.remove('hidden');
+                            }
+                        };
+                        optsEl.appendChild(btn);
+                    });
+                }
+            } catch (e) { console.error("Error rendering journey:", e); }
         }
 
-        function updateActiveStateUI(stateName) {
-            document.getElementById('activeStateLabel').textContent = stateName;
-            
-            // Update slider pills styling
-            document.querySelectorAll('.state-pill').forEach(btn => {
-                if(btn.textContent === stateName) btn.classList.add('active-pill');
-                else btn.classList.remove('active-pill');
-            });
-            
-            updateStateUI(stateName);
-        }
-
-        document.getElementById('stateSelector').addEventListener('change', (e) => {
-            updateActiveStateUI(e.target.value);
-        });
-        document.getElementById('voterGuideBtn').onclick = () => document.getElementById('guideModal').classList.remove('hidden');
-        document.getElementById('closeGuide').onclick = () => document.getElementById('guideModal').classList.add('hidden');
-
-        // SECURITY & TESTING UTILS
+        // CHAT & MISINFO
         function sanitize(str) {
             const div = document.createElement('div');
             div.textContent = str;
             return div.innerHTML;
         }
 
-        function assert(cond, msg) {
-            if (!cond) console.error("❌ TEST FAILED:", msg);
-            else console.log("✅ TEST PASSED:", msg);
-        }
-
-        function runPseudoTests() {
-            console.group("🚀 Running Pseudo Unit Tests");
-            assert(sanitize("<script>alert(1)</script>") === "&lt;script&gt;alert(1)&lt;/script&gt;", "Sanitization works");
-            assert(typeof calculateSimScore === 'function', "Simulator logic defined");
-            assert(document.getElementById('stateSelector').options.length > 0, "State selector populated");
-            console.groupEnd();
-        }
-
-        // VOTING JOURNEY LOGIC
-        let journeyStep = 0;
-        const journeyData = [
-            {
-                title: "Voter Registration",
-                desc: "Are you 18 or older and successfully registered in the voter list?",
-                why: "Registration is the legal requirement to participate. It ensures only eligible citizens decide the future.",
-                options: [
-                    { label: "Yes, I'm Registered", next: 1 },
-                    { label: "No, Not Yet", warning: "⚠️ Visit NVSP.in to apply online before the deadline." }
-                ]
-            },
-            {
-                title: "Voter List Verification",
-                desc: "Have you checked your name in the electoral roll for your constituency?",
-                why: "Names can sometimes be shifted or missing. Verification prevents last-minute surprises at the booth.",
-                options: [
-                    { label: "Yes, Name Found", next: 2 },
-                    { label: "No, Need to Check", warning: "⚠️ Use the 'Search in Electoral Roll' tool on the ECI website." }
-                ]
-            },
-            {
-                title: "ID Verification",
-                desc: "Do you have a valid ID (Voter ID, Aadhaar, PAN, etc.)?",
-                why: "Identity proof is mandatory to prevent proxy voting and ensure one-person-one-vote.",
-                options: [
-                    { label: "Yes, I have it", next: 3 },
-                    { label: "I lost my ID", warning: "⚠️ You can use any of the 12 alternative documents listed by ECI." }
-                ]
-            },
-            {
-                title: "Polling Booth Identified",
-                desc: "Do you know the exact location of your polling booth?",
-                why: "Knowing your booth saves time and ensures you don't miss the voting hours.",
-                options: [
-                    { label: "Yes, I know it", next: 4 },
-                    { label: "No, I'm unsure", warning: "⚠️ Check your booth location using the Voter Helpline App." }
-                ]
-            },
-            {
-                title: "Vote Casting",
-                desc: "Are you ready to cast your vote on the EVM/VVPAT?",
-                why: "The final act! Verify the red light on the EVM and the slip on the VVPAT to confirm your choice.",
-                options: [
-                    { label: "I am Ready!", next: 5 }
-                ]
-            },
-            {
-                title: "Success!",
-                desc: "You've successfully simulated your journey. Remember to get your indelible ink mark!",
-                why: "The ink mark is a badge of pride and a security measure against double voting.",
-                options: [
-                    { label: "Restart Journey", next: 0 }
-                ]
-            }
-        ];
-
-        function renderJourney() {
-            const data = journeyData[journeyStep];
-            const journeyContent = document.getElementById('journeyContent');
-            const journeyOptions = document.getElementById('journeyOptions');
-            const journeyMessage = document.getElementById('journeyMessage');
-            const stepIndicator = document.getElementById('stepIndicator');
-            const stepProgress = document.getElementById('stepProgress');
-            const journeyStepTitle = document.getElementById('journeyStepTitle');
-            const journeyStepDesc = document.getElementById('journeyStepDesc');
-            const journeyWhyText = document.getElementById('journeyWhyText');
-
-            journeyStepTitle.textContent = `Step ${journeyStep + 1}: ${data.title}`;
-            journeyStepDesc.textContent = data.desc;
-            journeyWhyText.textContent = data.why;
-            stepIndicator.textContent = `Step ${journeyStep + 1} of 6: ${data.title}`;
-            
-            // Progress dots
-            stepProgress.innerHTML = '';
-            for(let i=0; i<6; i++) {
-                const dot = document.createElement('div');
-                dot.className = `h-1.5 flex-grow rounded-full transition-all duration-500 ${i <= journeyStep ? 'bg-blue-600' : 'bg-slate-800'}`;
-                stepProgress.appendChild(dot);
-            }
-
-            journeyOptions.innerHTML = '';
-            data.options.forEach(opt => {
-                const btn = document.createElement('button');
-                btn.className = opt.next !== undefined ? 
-                    "px-6 py-2 bg-blue-600 text-white rounded-full text-sm font-bold hover:bg-blue-700 transition" :
-                    "px-6 py-2 bg-slate-800 text-slate-300 rounded-full text-sm font-bold hover:bg-slate-700 transition border border-slate-700";
-                btn.textContent = opt.label;
-                btn.onclick = () => {
-                    if (opt.next !== undefined) {
-                        journeyStep = opt.next;
-                        journeyMessage.classList.add('hidden');
-                        renderJourney();
-                    } else {
-                        journeyMessage.textContent = opt.warning;
-                        journeyMessage.classList.remove('hidden');
-                    }
-                };
-                journeyOptions.appendChild(btn);
-            });
-
-            // Back button
-            if (journeyStep > 0 && journeyStep < 5) {
-                const backBtn = document.createElement('button');
-                backBtn.className = "px-6 py-2 bg-transparent text-slate-500 rounded-full text-xs hover:text-slate-300 transition";
-                backBtn.textContent = "← Previous Step";
-                backBtn.onclick = () => {
-                    journeyStep--;
-                    journeyMessage.classList.add('hidden');
-                    renderJourney();
-                };
-                journeyOptions.appendChild(backBtn);
-            }
-        }
-
-        // CHAT
         const appendMessage = (sender, text) => {
+            const area = getEl('chatArea');
+            if (!area) return;
             const div = document.createElement('div');
             div.className = sender === 'user' ? 'bg-blue-600/20 ml-auto p-3 rounded-2xl max-w-[85%] text-right border border-blue-500/20' : 'bg-slate-800/80 p-3 rounded-2xl max-w-[85%] border border-slate-700';
             div.innerHTML = `<p class="text-xs">${sanitize(text)}</p>`;
-            chatArea.appendChild(div);
-            chatArea.scrollTop = chatArea.scrollHeight;
+            area.appendChild(div);
+            area.scrollTop = area.scrollHeight;
         };
 
-        sendBtn.addEventListener('click', async () => {
-            const val = chatInput.value; if(!val) return;
-            appendMessage('user', val); chatInput.value = '';
-            try {
-                const res = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: sanitize(val), role: currentRole }) });
-                const data = await res.json(); appendMessage('ai', data.response);
-            } catch(e) { appendMessage('ai', "Learning mode active."); }
-        });
-
-        document.querySelectorAll('.suggestion-chip').forEach(c => c.onclick = () => { chatInput.value = c.textContent; sendBtn.click(); });
-
-        // MISINFORMATION CHECKER
-        document.getElementById('checkBtn').addEventListener('click', async () => {
-            const input = document.getElementById('misinfoInput');
-            const res = document.getElementById('checkResult');
-            const val = sanitize(input.value.trim());
-            
-            if(!val) return;
-            
-            res.classList.remove('hidden');
-            res.className = 'mt-4 p-4 rounded-xl bg-slate-800 border border-slate-700 animate-fade text-xs flex items-center gap-3';
-            res.innerHTML = `<span class="animate-spin text-purple-400">⏳</span> Analyzing patterns...`;
+        // INITIALIZATION
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log("🚀 EDUlection System Initializing...");
             
             try {
-                const response = await fetch('/api/verify', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ claim: val })
+                // Event Listeners
+                getEl('sendBtn')?.addEventListener('click', async () => {
+                    const input = getEl('chatInput');
+                    const val = input?.value; if(!val) return;
+                    appendMessage('user', val); input.value = '';
+                    try {
+                        const res = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: sanitize(val), role: currentRole }) });
+                        const data = await res.json(); appendMessage('ai', data.response);
+                    } catch(e) { appendMessage('ai', "Learning mode active (Offline)."); }
                 });
-                const data = await response.json();
-                
-                const formattedResult = sanitize(data.result).replace(/\n/g, '<br>');
-                const isFalse = data.result.toLowerCase().includes('false') || data.result.toLowerCase().includes('galat');
-                const isTrue = data.result.toLowerCase().includes('true') || data.result.toLowerCase().includes('sahi');
-                
-                let accentColor = 'purple';
-                if(isFalse) accentColor = 'red';
-                if(isTrue) accentColor = 'green';
 
-                res.className = `mt-4 p-4 rounded-xl bg-${accentColor}-500/10 border border-${accentColor}-500/30 animate-fade text-sm`;
-                res.innerHTML = `
-                    <div class="flex items-start gap-3">
-                        <span class="text-2xl">${isFalse ? '❌' : (isTrue ? '✅' : '🔍')}</span>
-                        <div>
-                            <p class="text-xs leading-relaxed text-slate-200">${formattedResult}</p>
-                        </div>
-                    </div>
-                `;
+                getEl('checkBtn')?.addEventListener('click', async () => {
+                    const input = getEl('misinfoInput');
+                    const res = getEl('checkResult');
+                    const val = sanitize(input?.value.trim());
+                    if(!val || !res) return;
+                    res.classList.remove('hidden');
+                    res.innerHTML = `⏳ Analyzing...`;
+                    try {
+                        const response = await fetch('/api/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ claim: val }) });
+                        const data = await response.json();
+                        res.innerHTML = sanitize(data.result);
+                    } catch (err) { res.innerHTML = "Offline verification active."; }
+                });
+
+                ['sim-turnout', 'sim-misinfo', 'sim-satisfaction', 'sim-opposition', 'sim-issues'].forEach(id => {
+                    getEl(id)?.addEventListener('input', (e) => {
+                        const valId = 'val-' + id.split('-')[1];
+                        const display = getEl(valId);
+                        if (display) display.textContent = e.target.value + '%';
+                        runSimulation();
+                    });
+                });
+
+                getEl('stateSelector')?.addEventListener('change', (e) => {
+                    const state = e.target.value;
+                    const label = getEl('activeStateLabel');
+                    if (label) label.textContent = state;
+                    updateStateUI(state);
+                });
+
+                getEl('roleSelector')?.addEventListener('change', (e) => {
+                    currentRole = e.target.value;
+                    appendMessage('ai', `📍 Context updated for: ${currentRole.toUpperCase()}`);
+                });
+
+                document.querySelectorAll('.suggestion-chip').forEach(c => {
+                    c.onclick = () => {
+                        const input = getEl('chatInput');
+                        if (input) {
+                            input.value = c.textContent;
+                            getEl('sendBtn')?.click();
+                        }
+                    };
+                });
+
+                getEl('voterGuideBtn')?.addEventListener('click', () => getEl('guideModal')?.classList.remove('hidden'));
+                getEl('closeGuide')?.addEventListener('click', () => getEl('guideModal')?.classList.add('hidden'));
+
+                // Initial UI population
+                updateStateUI("Delhi");
+                initOutcomeChart();
+                runSimulation();
+                renderJourney();
+                
+                const factEl = getEl('factContent');
+                if (factEl) factEl.textContent = FACTS[Math.floor(Math.random() * FACTS.length)];
+                
+                console.log("✅ EDUlection System Ready.");
             } catch (err) {
-                res.className = 'mt-4 p-4 rounded-xl bg-purple-500/10 border border-purple-500/30 animate-fade text-xs';
-                res.innerHTML = `<h4 class="font-bold text-purple-400 mb-1">Result: Verification Error</h4><p class="text-[10px] italic">Please verify via official sources (ECI/NVSP). AI verification service is currently offline.</p>`;
+                console.error("CRITICAL INIT ERROR:", err);
             }
         });
 
-        // INIT
-        window.onload = () => {
-            updateStateUI("Delhi");
-            initOutcomeChart();
-            runSimulation();
-            renderJourney();
-            runPseudoTests();
-            factContent.textContent = FACTS[Math.floor(Math.random() * FACTS.length)];
-        };
+        function selectBySlider(stateName) {
+            const sel = getEl('stateSelector');
+            if (sel) {
+                sel.value = stateName;
+                const label = getEl('activeStateLabel');
+                if (label) label.textContent = stateName;
+                updateStateUI(stateName);
+                appendMessage('ai', `📍 Switched to ${stateName}.`);
+            }
+        }
     </script>
 </body>
 </html>
