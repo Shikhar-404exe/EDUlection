@@ -21,9 +21,9 @@ app.use(express.json());
 app.use(express.static('public'));
 
 // Initialize Vertex AI
-const vertexAI = new VertexAI({ project: 'edulection', location: 'asia-south1' });
+const vertexAI = new VertexAI({ project: 'edulection', location: 'us-central1' });
 const generativeModel = vertexAI.getGenerativeModel({
-    model: 'gemini-1.5-pro',
+    model: 'gemini-1.5-flash',
 });
 
 const SYSTEM_PROMPT = `
