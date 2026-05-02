@@ -37,12 +37,18 @@ async function getApiKey() {
 }
 
 let openai;
-getApiKey().then(key => {
+async function initAI() {
+    if (openai) return openai;
+    const key = await getApiKey();
     openai = new OpenAI({
         baseURL: "https://openrouter.ai/api/v1",
         apiKey: key,
     });
-});
+    return openai;
+}
+
+// Pre-initialize
+initAI();
 
 const SYSTEM_PROMPT = `
 You are EDUlection AI, a helpful civic assistant. 
@@ -57,7 +63,8 @@ Follow these rules:
 app.post('/api/chat', async (req, res) => {
     const { message, role } = req.body;
     try {
-        const response = await openai.chat.completions.create({
+        const ai = await initAI();
+        const response = await ai.chat.completions.create({
             model: "google/gemini-flash-1.5",
             messages: [
                 { role: "system", content: `${SYSTEM_PROMPT} Current User Role: ${role}` },
@@ -75,7 +82,8 @@ app.post('/api/chat', async (req, res) => {
 app.post('/api/verify', async (req, res) => {
     const { claim } = req.body;
     try {
-        const response = await openai.chat.completions.create({
+        const ai = await initAI();
+        const response = await ai.chat.completions.create({
             model: "google/gemini-flash-1.5",
             messages: [
                 { 
