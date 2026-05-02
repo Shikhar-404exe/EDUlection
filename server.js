@@ -65,7 +65,7 @@ app.post('/api/chat', async (req, res) => {
     try {
         const ai = await initAI();
         const response = await ai.chat.completions.create({
-            model: "google/gemini-flash-1.5",
+            model: "google/gemini-pro-1.5",
             messages: [
                 { role: "system", content: `${SYSTEM_PROMPT} Current User Role: ${role}` },
                 { role: "user", content: message }
@@ -84,7 +84,7 @@ app.post('/api/verify', async (req, res) => {
     try {
         const ai = await initAI();
         const response = await ai.chat.completions.create({
-            model: "google/gemini-flash-1.5",
+            model: "google/gemini-pro-1.5",
             messages: [
                 { 
                     role: "system", 
