@@ -1,0 +1,72 @@
+const express = require('express');
+const { OpenAI } = require('openai');
+const path = require('path');
+require('dotenv').config();
+
+const app = express();
+const port = process.env.PORT || 3000;
+
+app.use(express.json());
+app.use(express.static('public'));
+
+const openai = new OpenAI({
+    baseURL: "https://openrouter.ai/api/v1",
+    apiKey: process.env.OPENROUTER_API_KEY,
+});
+
+const SYSTEM_PROMPT = `
+You are EDUlection AI, a helpful civic assistant. 
+Follow these rules:
+1. ALWAYS respond in the SAME language as the user (English if they ask in English, Hindi for Hindi, and Hinglish for Hinglish).
+2. Keep responses short, simple, and conversational.
+3. Your goal is to educate users about election processes in a neutral, non-partisan way.
+4. Adapt your tone based on the user's role (Voter or Officer).
+5. If a user asks about voting, explain it simply.
+`;
+
+app.post('/api/chat', async (req, res) => {
+    const { message, role } = req.body;
+    try {
+        const response = await openai.chat.completions.create({
+            model: "openai/gpt-3.5-turbo",
+            messages: [
+                { role: "system", content: `${SYSTEM_PROMPT} Current User Role: ${role}` },
+                { role: "user", content: message }
+            ],
+            max_tokens: 250
+        });
+        res.json({ response: response.choices[0].message.content });
+    } catch (error) {
+        console.error('OpenAI Error:', error);
+        res.json({ response: "Abhi main thoda busy hoon (API issue). Lekin voting zaroori hai!" });
+    }
+});
+
+app.post('/api/verify', async (req, res) => {
+    const { claim } = req.body;
+    try {
+        const response = await openai.chat.completions.create({
+            model: "openai/gpt-3.5-turbo",
+            messages: [
+                { 
+                    role: "system", 
+                    content: `You are a rigorous election fact-checker. 
+                    Analyze the claim based on official Election Commission rules and known facts.
+                    Provide the output in the SAME language as the claim.
+                    FORMAT: 
+                    Verdict: [Likely True / Likely False / Misleading]
+                    Reason: [A 1-2 sentence explanation of why, citing general rules if applicable]` 
+                },
+                { role: "user", content: claim }
+            ],
+            max_tokens: 200
+        });
+        res.json({ result: response.choices[0].message.content });
+    } catch (error) {
+        res.json({ result: "Verdict: Error | Reason: Verification service temporarily unavailable. Hamesha official sources check karein." });
+    }
+});
+
+app.listen(port, () => {
+    console.log(`Server running at http://localhost:${port}`);
+});
