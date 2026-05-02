@@ -40,7 +40,7 @@ app.post('/api/chat', async (req, res) => {
     const { message, role } = req.body;
     try {
         const response = await openai.chat.completions.create({
-            model: "google/gemini-flash-1.5",
+            model: "google/gemini-flash-1.5:free",
             messages: [
                 { role: "system", content: `${SYSTEM_PROMPT} Current User Role: ${role}` },
                 { role: "user", content: message }
@@ -58,7 +58,7 @@ app.post('/api/verify', async (req, res) => {
     const { claim } = req.body;
     try {
         const response = await openai.chat.completions.create({
-            model: "google/gemini-flash-1.5",
+            model: "google/gemini-flash-1.5:free",
             messages: [
                 { 
                     role: "system", 
