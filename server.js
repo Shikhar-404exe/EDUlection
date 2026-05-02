@@ -2,6 +2,17 @@ const express = require('express');
 const { OpenAI } = require('openai');
 const path = require('path');
 require('dotenv').config();
+const winston = require('winston');
+const { LoggingWinston } = require('@google-cloud/logging-winston');
+
+const loggingWinston = new LoggingWinston();
+const logger = winston.createLogger({
+    level: 'info',
+    transports: [
+        new winston.transports.Console(),
+        loggingWinston,
+    ],
+});
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -9,9 +20,28 @@ const port = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.static('public'));
 
-const openai = new OpenAI({
-    baseURL: "https://openrouter.ai/api/v1",
-    apiKey: process.env.OPENROUTER_API_KEY,
+const { SecretManagerServiceClient } = require('@google-cloud/secret-manager');
+const client = new SecretManagerServiceClient();
+
+async function getApiKey() {
+    try {
+        // Attempt to fetch from Google Cloud Secret Manager
+        const [version] = await client.accessSecretVersion({
+            name: 'projects/edulection/secrets/OPENROUTER_API_KEY/versions/latest',
+        });
+        return version.payload.data.toString();
+    } catch (err) {
+        // Fallback to .env for local development or if API is not enabled
+        return process.env.OPENROUTER_API_KEY;
+    }
+}
+
+let openai;
+getApiKey().then(key => {
+    openai = new OpenAI({
+        baseURL: "https://openrouter.ai/api/v1",
+        apiKey: key,
+    });
 });
 
 const SYSTEM_PROMPT = `
@@ -28,7 +58,7 @@ app.post('/api/chat', async (req, res) => {
     const { message, role } = req.body;
     try {
         const response = await openai.chat.completions.create({
-            model: "openai/gpt-3.5-turbo",
+            model: "google/gemini-flash-1.5",
             messages: [
                 { role: "system", content: `${SYSTEM_PROMPT} Current User Role: ${role}` },
                 { role: "user", content: message }
@@ -37,7 +67,7 @@ app.post('/api/chat', async (req, res) => {
         });
         res.json({ response: response.choices[0].message.content });
     } catch (error) {
-        console.error('OpenAI Error:', error);
+        logger.error('OpenAI Error:', error);
         res.json({ response: "Abhi main thoda busy hoon (API issue). Lekin voting zaroori hai!" });
     }
 });
@@ -46,7 +76,7 @@ app.post('/api/verify', async (req, res) => {
     const { claim } = req.body;
     try {
         const response = await openai.chat.completions.create({
-            model: "openai/gpt-3.5-turbo",
+            model: "google/gemini-flash-1.5",
             messages: [
                 { 
                     role: "system", 
@@ -68,5 +98,5 @@ app.post('/api/verify', async (req, res) => {
 });
 
 app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}`);
+    logger.info(`Server running at http://localhost:${port}`);
 });
