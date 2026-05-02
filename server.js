@@ -1,5 +1,5 @@
 const express = require('express');
-const { OpenAI } = require('openai');
+const axios = require('axios');
 const path = require('path');
 require('dotenv').config();
 const winston = require('winston');
@@ -20,12 +20,6 @@ const port = process.env.PORT || 8080;
 app.use(express.json());
 app.use(express.static('public'));
 
-// Using OpenRouter for maximum compatibility
-const openai = new OpenAI({
-    baseURL: "https://openrouter.ai/api/v1",
-    apiKey: process.env.OPENROUTER_API_KEY,
-});
-
 const SYSTEM_PROMPT = `
 You are EDUlection AI, a helpful civic assistant. 
 Follow these rules:
@@ -36,29 +30,38 @@ Follow these rules:
 5. If a user asks about voting, explain it simply.
 `;
 
+const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
+
 app.post('/api/chat', async (req, res) => {
     const { message, role } = req.body;
     try {
-        const response = await openai.chat.completions.create({
-            model: "google/gemini-flash-1.5:free",
+        const response = await axios.post(OPENROUTER_URL, {
+            model: "google/gemini-flash-1.5",
             messages: [
                 { role: "system", content: `${SYSTEM_PROMPT} Current User Role: ${role}` },
                 { role: "user", content: message }
-            ],
-            max_tokens: 500
+            ]
+        }, {
+            headers: {
+                "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+                "HTTP-Referer": "https://edulection.run.app",
+                "X-Title": "EDUlection Dashboard"
+            }
         });
-        res.json({ response: response.choices[0].message.content });
+        
+        res.json({ response: response.data.choices[0].message.content });
     } catch (error) {
-        logger.error('OpenRouter Error:', error);
-        res.json({ response: `⚠️ Error: ${error.message}. Please check your OpenRouter key and balance.` });
+        const errMsg = error.response ? JSON.stringify(error.response.data) : error.message;
+        logger.error('OpenRouter Chat Error:', errMsg);
+        res.json({ response: `⚠️ Error: ${errMsg}. Please check your OpenRouter configuration.` });
     }
 });
 
 app.post('/api/verify', async (req, res) => {
     const { claim } = req.body;
     try {
-        const response = await openai.chat.completions.create({
-            model: "google/gemini-flash-1.5:free",
+        const response = await axios.post(OPENROUTER_URL, {
+            model: "google/gemini-flash-1.5",
             messages: [
                 { 
                     role: "system", 
@@ -70,13 +73,20 @@ app.post('/api/verify', async (req, res) => {
                     Reason: [A 1-2 sentence explanation of why, citing general rules if applicable]` 
                 },
                 { role: "user", content: claim }
-            ],
-            max_tokens: 300
+            ]
+        }, {
+            headers: {
+                "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+                "HTTP-Referer": "https://edulection.run.app",
+                "X-Title": "EDUlection Dashboard"
+            }
         });
-        res.json({ result: response.choices[0].message.content });
+        
+        res.json({ result: response.data.choices[0].message.content });
     } catch (error) {
-        logger.error('Verification Error:', error);
-        res.json({ result: `Verdict: Error | Reason: ${error.message}` });
+        const errMsg = error.response ? JSON.stringify(error.response.data) : error.message;
+        logger.error('Verification Error:', errMsg);
+        res.json({ result: `Verdict: Error | Reason: ${errMsg}` });
     }
 });
 
