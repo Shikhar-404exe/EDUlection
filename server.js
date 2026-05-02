@@ -1,9 +1,9 @@
 const express = require('express');
+const { OpenAI } = require('openai');
 const path = require('path');
 require('dotenv').config();
 const winston = require('winston');
 const { LoggingWinston } = require('@google-cloud/logging-winston');
-const { VertexAI } = require('@google-cloud/vertexai');
 
 const loggingWinston = new LoggingWinston();
 const logger = winston.createLogger({
@@ -15,15 +15,15 @@ const logger = winston.createLogger({
 });
 
 const app = express();
-const port = process.env.PORT || 8080; // Default to 8080 for Cloud Run
+const port = process.env.PORT || 8080;
 
 app.use(express.json());
 app.use(express.static('public'));
 
-// Initialize Vertex AI with a highly stable model and region
-const vertexAI = new VertexAI({ project: 'edulection', location: 'us-central1' });
-const generativeModel = vertexAI.getGenerativeModel({
-    model: 'gemini-1.5-flash-002',
+// Using OpenRouter for maximum compatibility
+const openai = new OpenAI({
+    baseURL: "https://openrouter.ai/api/v1",
+    apiKey: process.env.OPENROUTER_API_KEY,
 });
 
 const SYSTEM_PROMPT = `
@@ -39,41 +39,41 @@ Follow these rules:
 app.post('/api/chat', async (req, res) => {
     const { message, role } = req.body;
     try {
-        const chat = generativeModel.startChat({
-            history: [
-                { role: 'user', parts: [{ text: `${SYSTEM_PROMPT} Current User Role: ${role}` }] },
-                { role: 'model', parts: [{ text: "Understood. I am EDUlection AI, your civic assistant. How can I help you today?" }] },
+        const response = await openai.chat.completions.create({
+            model: "google/gemini-flash-1.5",
+            messages: [
+                { role: "system", content: `${SYSTEM_PROMPT} Current User Role: ${role}` },
+                { role: "user", content: message }
             ],
+            max_tokens: 500
         });
-
-        const result = await chat.sendMessage(message);
-        const response = result.response;
-        const text = response.candidates[0].content.parts[0].text;
-        
-        res.json({ response: text });
+        res.json({ response: response.choices[0].message.content });
     } catch (error) {
-        logger.error('Vertex AI Error:', error);
-        res.json({ response: `⚠️ Vertex AI Error: ${error.message}. If the issue persists, ensure Vertex AI API is fully propagated in your GCP project.` });
+        logger.error('OpenRouter Error:', error);
+        res.json({ response: `⚠️ Error: ${error.message}. Please check your OpenRouter key and balance.` });
     }
 });
 
 app.post('/api/verify', async (req, res) => {
     const { claim } = req.body;
     try {
-        const prompt = `You are a rigorous election fact-checker. 
-        Analyze the claim based on official Election Commission rules and known facts.
-        Provide the output in the SAME language as the claim.
-        FORMAT: 
-        Verdict: [Likely True / Likely False / Misleading]
-        Reason: [A 1-2 sentence explanation of why, citing general rules if applicable]
-        
-        Claim: ${claim}`;
-
-        const result = await generativeModel.generateContent(prompt);
-        const response = result.response;
-        const text = response.candidates[0].content.parts[0].text;
-
-        res.json({ result: text });
+        const response = await openai.chat.completions.create({
+            model: "google/gemini-flash-1.5",
+            messages: [
+                { 
+                    role: "system", 
+                    content: `You are a rigorous election fact-checker. 
+                    Analyze the claim based on official Election Commission rules and known facts.
+                    Provide the output in the SAME language as the claim.
+                    FORMAT: 
+                    Verdict: [Likely True / Likely False / Misleading]
+                    Reason: [A 1-2 sentence explanation of why, citing general rules if applicable]` 
+                },
+                { role: "user", content: claim }
+            ],
+            max_tokens: 300
+        });
+        res.json({ result: response.choices[0].message.content });
     } catch (error) {
         logger.error('Verification Error:', error);
         res.json({ result: `Verdict: Error | Reason: ${error.message}` });
