@@ -1,93 +1,79 @@
-# 🗳️ EDUlection
+# 🗳️ EDUlection (DemocracyOS Lite)
 
-### A Civic Intelligence System for Election Education
+### A Civic Intelligence & Election Simulation Dashboard
 
-🚀 **Live Demo:** https://edulection-630258863198.asia-south1.run.app
+🚀 **Live Production URL:** [https://edulection-630258863198.asia-south1.run.app](https://edulection-630258863198.asia-south1.run.app)
 
 ---
 
 ## 📌 Overview
-
-EDUlection is an interactive platform designed to help users understand elections in a simple, engaging, and practical way.
-
-Instead of just explaining concepts, it allows users to:
-
-* Explore election processes
-* Simulate different scenarios
-* Understand regional issues
-* Learn how to evaluate candidates
+EDUlection is a high-fidelity, interactive platform designed to bridge the gap between complex civic processes and citizen understanding. Built for the Google Cloud Run environment, it serves as a "Civic Intelligence Assistant" that educates users on the voting journey, election scenarios, and regional political nuances through a modern, responsive interface.
 
 ---
 
-## ✨ Key Features
+## ✨ Core Features
 
-### 🧠 Smart Chat Assistant
+### 🧠 Resilient Intelligence Assistant (Multi-Model)
+The dashboard features a unique **Resilient AI Layer** that guarantees responses even during model outages.
+- **Primary**: Google Gemini 1.5 Flash (optimized for speed/Hinglish).
+- **Secondary**: Google Gemini 1.5 Pro (advanced reasoning fallback).
+- **Final Fallback**: OpenAI GPT-3.5 Turbo (ensures 100% uptime).
+- **Voice-Enabled**: Native "Read Aloud" accessibility (🔊) for all AI responses, optimized for English and Hindi.
 
-* Explains election concepts clearly
-* Adapts to user language (English / Hinglish)
+### 🧭 Interactive Voting Journey
+A 6-step gamified simulator that walks users through the lifecycle of a voter:
+- Registration → List Verification → ID Checks → Booth Identification → Vote Casting → Success.
+- Provides "Why this matters" educational context for every phase.
 
----
+### 🎛️ Scenario Simulation Engine
+A real-time outcome projector that allows users to adjust variables:
+- **Turnout**, **Misinformation**, **Governance Satisfaction**, and **Local Issues**.
+- Dynamic visualizations powered by **Chart.js**.
+- Instant stability indexing and outcome explanations.
 
-### 🎛️ Election Simulator
+### 🌍 Regional Intelligence (State-Aware)
+- **Horizontal State Slider**: Mobile-friendly selector for all 36 Indian regions.
+- **Dynamic Context**: Automatically updates local issues, resource priorities, and AI context based on the selected state's profile (Urban, Industrial, Agricultural, or Mixed).
 
-* Adjust factors like turnout, misinformation, and governance
-* See how outcomes change
-* Get clear explanations of results
-
----
-
-### 🌍 State-Aware Insights
-
-* Select your state
-* View key local issues
-* Understand what matters in your region
-
----
-
-### 🧭 Voting Journey Simulator (New!)
-* Interactive step-by-step guide through the voting process
-* Covers Registration, Verification, ID checks, and Booth identification
-* Educational "Why this matters" insights for every step
+### 🛡️ Smart Misinformation Checker
+- Direct interface to verify claims using rigorous, non-partisan AI fact-checking.
+- Provides verdicts (True/False/Misleading) with 1-2 sentence logical explanations.
 
 ---
 
-### 🛡️ Security & Quality
-* **Input Sanitization**: Built-in protection against XSS and injection.
-* **Testing Suite**: Comprehensive manual and automated test cases documented in [tests.md](tests.md).
-* **Accessibility**: Clean, high-contrast UI with ARIA support for better screen reader compatibility.
+## 🛠️ Technical Stack & Architecture
+
+### **Frontend (Public)**
+- **Modern UI**: Tailwind CSS (CDN) with Glassmorphism aesthetic.
+- **Visuals**: Chart.js for outcome and priority visualizations.
+- **Resilience**: Safe-DOM access patterns and lazy-loading for all external dependencies.
+
+### **Backend (Node.js/Express)**
+- **API Strategy**: Direct Axios implementation with OpenRouter integration.
+- **Security**: 
+  - **Input Sanitization**: Global `sanitize()` utility to mitigate XSS.
+  - **IAM Integration**: Configured for Google Cloud IAM permissions.
+- **Observability**: **Google Cloud Logging** (Winston transport) for real-time production monitoring.
+
+### **Deployment**
+- **Platform**: Google Cloud Run (Serverless).
+- **Region**: `asia-south1` (Mumbai) for low-latency local access.
+- **CI/CD ready**: Configured for standard Git-to-Cloud-Run workflows.
 
 ---
 
-## 🛠️ Tech Stack
-* **Frontend:** HTML, Tailwind CSS, JavaScript
-* **Charts:** Chart.js
-* **AI:** OpenRouter API
-* **Backend:** Node.js (Express)
-* **Deployment:** Google Cloud Run
-
----
-
-## 📄 Documentation
-* [CORE.md](guide/CORE.md) - Project Principles
-* [BUILD_PLAN.md](guide/BUILD_PLAN.md) - Technical Architecture
-* [tests.md](tests.md) - Quality Assurance & Testing Report
+## 🧪 Testing & Quality
+- **Pseudo Unit Tests**: Automated health checks run on every page load (Sanitization, Logic, Data Integrity).
+- **Manual Verification**: Extensive test cases documented in [tests.md](tests.md).
+- **Accessibility**: High contrast, ARIA labels, and Voice Synthesis support.
 
 ---
 
 ## ⚠️ Disclaimer
-This platform is built for **educational purposes only**.
-It does not provide political advice, predictions, or endorsements.
-
----
-
-## 🎯 Goal
-To make civic awareness simple, interactive, and accessible for every citizen.
+EDUlection is an **educational simulator**. It does not provide real-time election results, political endorsements, or binding legal advice. All simulation scores are calculated based on mathematical models for educational demonstration.
 
 ---
 
 ## 👨‍💻 Author
-Built as a high-quality, evaluation-ready civic intelligence assistant.
-
----
-
-⭐ If you like the project, consider giving it a star!
+**EDUlection Team** - *Building the future of civic awareness.*
+⭐ *If you find this project helpful for civic education, consider giving it a star on GitHub!*
