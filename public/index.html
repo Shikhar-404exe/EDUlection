@@ -166,6 +166,58 @@
                 </div>
             </div>
         </section>
+        <!-- VOTING JOURNEY SIMULATOR (NEW CORE FEATURE) -->
+        <section class="glass p-8 rounded-3xl animate-fade overflow-hidden relative">
+            <div class="flex flex-col lg:flex-row gap-12">
+                <div class="lg:w-2/5 space-y-4">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/30 text-[10px] font-bold text-blue-400 uppercase tracking-widest">
+                        Interactive Guide
+                    </div>
+                    <h2 class="text-3xl font-bold text-white tracking-tight">Simulate Your <span class="text-blue-500">Voting Journey</span></h2>
+                    <p class="text-slate-400 text-sm leading-relaxed">
+                        Experience the step-by-step process of casting your vote. Learn what documents you need and how to ensure your vote is counted correctly.
+                    </p>
+                    
+                    <div id="stepProgress" class="flex gap-1 mt-6">
+                        <!-- Progress indicators will be injected here -->
+                        <div class="h-1.5 flex-grow rounded-full bg-blue-600 transition-all duration-500" style="width: 20%"></div>
+                        <div class="h-1.5 flex-grow rounded-full bg-slate-800 transition-all duration-500"></div>
+                        <div class="h-1.5 flex-grow rounded-full bg-slate-800 transition-all duration-500"></div>
+                        <div class="h-1.5 flex-grow rounded-full bg-slate-800 transition-all duration-500"></div>
+                        <div class="h-1.5 flex-grow rounded-full bg-slate-800 transition-all duration-500"></div>
+                    </div>
+                    <p id="stepIndicator" class="text-[10px] text-slate-500 font-bold uppercase mt-2">Step 1 of 5: Registration</p>
+                </div>
+
+                <div class="lg:w-3/5">
+                    <div id="journeyCard" class="bg-slate-900/40 border border-slate-800 p-8 rounded-2xl min-h-[300px] flex flex-col justify-between animate-fade">
+                        <div id="journeyContent" class="space-y-6">
+                            <!-- Injected by JS -->
+                            <div class="space-y-4">
+                                <h3 id="journeyStepTitle" class="text-xl font-bold text-white">Step 1: Voter Registration</h3>
+                                <p id="journeyStepDesc" class="text-slate-300 text-sm leading-relaxed">Are you 18 or older and successfully registered in the voter list?</p>
+                                
+                                <div id="journeyWhy" class="p-4 bg-blue-500/5 border-l-4 border-blue-500 rounded-r-xl">
+                                    <p class="text-xs text-slate-400 uppercase font-bold mb-1">Why this matters</p>
+                                    <p id="journeyWhyText" class="text-xs text-blue-200 italic">Registration is the legal requirement to participate. It ensures only eligible citizens decide the future of the nation.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="journeyControls" class="flex flex-col gap-4 mt-8">
+                            <div id="journeyOptions" class="flex flex-wrap gap-3">
+                                <!-- Options like Yes/No will be injected here -->
+                                <button onclick="nextJourneyStep(true)" class="px-6 py-2 bg-blue-600 text-white rounded-full text-sm font-bold hover:bg-blue-700 transition">Yes, I'm Registered</button>
+                                <button onclick="handleJourneyChoice(false)" class="px-6 py-2 bg-slate-800 text-slate-300 rounded-full text-sm font-bold hover:bg-slate-700 transition border border-slate-700">No, Not Yet</button>
+                            </div>
+                            <div id="journeyMessage" class="hidden text-xs p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 animate-pulse">
+                                ⚠️ You must register first! Visit NVSP.in to apply online before the deadline.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
 
         <!-- ENHANCED SCENARIO SIMULATOR -->
         <section class="glass p-8 rounded-3xl md:col-span-2 card">
@@ -468,11 +520,143 @@
         document.getElementById('voterGuideBtn').onclick = () => document.getElementById('guideModal').classList.remove('hidden');
         document.getElementById('closeGuide').onclick = () => document.getElementById('guideModal').classList.add('hidden');
 
+        // SECURITY & TESTING UTILS
+        function sanitize(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function assert(cond, msg) {
+            if (!cond) console.error("❌ TEST FAILED:", msg);
+            else console.log("✅ TEST PASSED:", msg);
+        }
+
+        function runPseudoTests() {
+            console.group("🚀 Running Pseudo Unit Tests");
+            assert(sanitize("<script>alert(1)</script>") === "&lt;script&gt;alert(1)&lt;/script&gt;", "Sanitization works");
+            assert(typeof calculateSimScore === 'function', "Simulator logic defined");
+            assert(document.getElementById('stateSelector').options.length > 0, "State selector populated");
+            console.groupEnd();
+        }
+
+        // VOTING JOURNEY LOGIC
+        let journeyStep = 0;
+        const journeyData = [
+            {
+                title: "Voter Registration",
+                desc: "Are you 18 or older and successfully registered in the voter list?",
+                why: "Registration is the legal requirement to participate. It ensures only eligible citizens decide the future.",
+                options: [
+                    { label: "Yes, I'm Registered", next: 1 },
+                    { label: "No, Not Yet", warning: "⚠️ Visit NVSP.in to apply online before the deadline." }
+                ]
+            },
+            {
+                title: "Voter List Verification",
+                desc: "Have you checked your name in the electoral roll for your constituency?",
+                why: "Names can sometimes be shifted or missing. Verification prevents last-minute surprises at the booth.",
+                options: [
+                    { label: "Yes, Name Found", next: 2 },
+                    { label: "No, Need to Check", warning: "⚠️ Use the 'Search in Electoral Roll' tool on the ECI website." }
+                ]
+            },
+            {
+                title: "ID Verification",
+                desc: "Do you have a valid ID (Voter ID, Aadhaar, PAN, etc.)?",
+                why: "Identity proof is mandatory to prevent proxy voting and ensure one-person-one-vote.",
+                options: [
+                    { label: "Yes, I have it", next: 3 },
+                    { label: "I lost my ID", warning: "⚠️ You can use any of the 12 alternative documents listed by ECI." }
+                ]
+            },
+            {
+                title: "Polling Booth Identified",
+                desc: "Do you know the exact location of your polling booth?",
+                why: "Knowing your booth saves time and ensures you don't miss the voting hours.",
+                options: [
+                    { label: "Yes, I know it", next: 4 },
+                    { label: "No, I'm unsure", warning: "⚠️ Check your booth location using the Voter Helpline App." }
+                ]
+            },
+            {
+                title: "Vote Casting",
+                desc: "Are you ready to cast your vote on the EVM/VVPAT?",
+                why: "The final act! Verify the red light on the EVM and the slip on the VVPAT to confirm your choice.",
+                options: [
+                    { label: "I am Ready!", next: 5 }
+                ]
+            },
+            {
+                title: "Success!",
+                desc: "You've successfully simulated your journey. Remember to get your indelible ink mark!",
+                why: "The ink mark is a badge of pride and a security measure against double voting.",
+                options: [
+                    { label: "Restart Journey", next: 0 }
+                ]
+            }
+        ];
+
+        function renderJourney() {
+            const data = journeyData[journeyStep];
+            const journeyContent = document.getElementById('journeyContent');
+            const journeyOptions = document.getElementById('journeyOptions');
+            const journeyMessage = document.getElementById('journeyMessage');
+            const stepIndicator = document.getElementById('stepIndicator');
+            const stepProgress = document.getElementById('stepProgress');
+
+            journeyStepTitle.textContent = `Step ${journeyStep + 1}: ${data.title}`;
+            journeyStepDesc.textContent = data.desc;
+            journeyWhyText.textContent = data.why;
+            stepIndicator.textContent = `Step ${journeyStep + 1} of 6: ${data.title}`;
+            
+            // Progress dots
+            stepProgress.innerHTML = '';
+            for(let i=0; i<6; i++) {
+                const dot = document.createElement('div');
+                dot.className = `h-1.5 flex-grow rounded-full transition-all duration-500 ${i <= journeyStep ? 'bg-blue-600' : 'bg-slate-800'}`;
+                stepProgress.appendChild(dot);
+            }
+
+            journeyOptions.innerHTML = '';
+            data.options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = opt.next !== undefined ? 
+                    "px-6 py-2 bg-blue-600 text-white rounded-full text-sm font-bold hover:bg-blue-700 transition" :
+                    "px-6 py-2 bg-slate-800 text-slate-300 rounded-full text-sm font-bold hover:bg-slate-700 transition border border-slate-700";
+                btn.textContent = opt.label;
+                btn.onclick = () => {
+                    if (opt.next !== undefined) {
+                        journeyStep = opt.next;
+                        journeyMessage.classList.add('hidden');
+                        renderJourney();
+                    } else {
+                        journeyMessage.textContent = opt.warning;
+                        journeyMessage.classList.remove('hidden');
+                    }
+                };
+                journeyOptions.appendChild(btn);
+            });
+
+            // Back button
+            if (journeyStep > 0 && journeyStep < 5) {
+                const backBtn = document.createElement('button');
+                backBtn.className = "px-6 py-2 bg-transparent text-slate-500 rounded-full text-xs hover:text-slate-300 transition";
+                backBtn.textContent = "← Previous Step";
+                backBtn.onclick = () => {
+                    journeyStep--;
+                    journeyMessage.classList.add('hidden');
+                    renderJourney();
+                };
+                journeyOptions.appendChild(backBtn);
+            }
+        }
+
         // CHAT
         const appendMessage = (sender, text) => {
             const div = document.createElement('div');
             div.className = sender === 'user' ? 'bg-blue-600/20 ml-auto p-3 rounded-2xl max-w-[85%] text-right border border-blue-500/20' : 'bg-slate-800/80 p-3 rounded-2xl max-w-[85%] border border-slate-700';
-            div.innerHTML = `<p class="text-xs">${text}</p>`;
+            div.innerHTML = `<p class="text-xs">${sanitize(text)}</p>`;
             chatArea.appendChild(div);
             chatArea.scrollTop = chatArea.scrollHeight;
         };
@@ -481,7 +665,7 @@
             const val = chatInput.value; if(!val) return;
             appendMessage('user', val); chatInput.value = '';
             try {
-                const res = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: val, role: currentRole }) });
+                const res = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: sanitize(val), role: currentRole }) });
                 const data = await res.json(); appendMessage('ai', data.response);
             } catch(e) { appendMessage('ai', "Learning mode active."); }
         });
@@ -492,7 +676,7 @@
         document.getElementById('checkBtn').addEventListener('click', async () => {
             const input = document.getElementById('misinfoInput');
             const res = document.getElementById('checkResult');
-            const val = input.value.trim();
+            const val = sanitize(input.value.trim());
             
             if(!val) return;
             
@@ -508,8 +692,7 @@
                 });
                 const data = await response.json();
                 
-                // Format the result
-                const formattedResult = data.result.replace(/\n/g, '<br>');
+                const formattedResult = sanitize(data.result).replace(/\n/g, '<br>');
                 const isFalse = data.result.toLowerCase().includes('false') || data.result.toLowerCase().includes('galat');
                 const isTrue = data.result.toLowerCase().includes('true') || data.result.toLowerCase().includes('sahi');
                 
@@ -537,6 +720,8 @@
             updateStateUI("Delhi");
             initOutcomeChart();
             runSimulation();
+            renderJourney();
+            runPseudoTests();
             factContent.textContent = FACTS[Math.floor(Math.random() * FACTS.length)];
         };
     </script>

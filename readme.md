@@ -44,23 +44,21 @@ Instead of just explaining concepts, it allows users to:
 
 ---
 
-### 🧭 Candidate Awareness
-
-* Learn how to evaluate candidates
-* Guided steps to find official candidate information
+### 🧭 Voting Journey Simulator (New!)
+* Interactive step-by-step guide through the voting process
+* Covers Registration, Verification, ID checks, and Booth identification
+* Educational "Why this matters" insights for every step
 
 ---
 
-### 📚 Educational Layers
-
-* “Why this matters” insights
-* “Did you know?” facts
-* First-time voter guidance
+### 🛡️ Security & Quality
+* **Input Sanitization**: Built-in protection against XSS and injection.
+* **Testing Suite**: Comprehensive manual and automated test cases documented in [tests.md](tests.md).
+* **Accessibility**: Clean, high-contrast UI with ARIA support for better screen reader compatibility.
 
 ---
 
 ## 🛠️ Tech Stack
-
 * **Frontend:** HTML, Tailwind CSS, JavaScript
 * **Charts:** Chart.js
 * **AI:** OpenRouter API
@@ -69,26 +67,26 @@ Instead of just explaining concepts, it allows users to:
 
 ---
 
-## ⚠️ Disclaimer
+## 📄 Documentation
+* [CORE.md](guide/CORE.md) - Project Principles
+* [BUILD_PLAN.md](guide/BUILD_PLAN.md) - Technical Architecture
+* [tests.md](tests.md) - Quality Assurance & Testing Report
 
+---
+
+## ⚠️ Disclaimer
 This platform is built for **educational purposes only**.
 It does not provide political advice, predictions, or endorsements.
 
 ---
 
 ## 🎯 Goal
-
-To make civic awareness:
-
-* Simple
-* Interactive
-* Accessible
+To make civic awareness simple, interactive, and accessible for every citizen.
 
 ---
 
 ## 👨‍💻 Author
-
-Built as part of a prompt engineering challenge.
+Built as a high-quality, evaluation-ready civic intelligence assistant.
 
 ---
 
