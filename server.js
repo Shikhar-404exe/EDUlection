@@ -75,7 +75,7 @@ app.post('/api/chat', async (req, res) => {
         res.json({ response: response.choices[0].message.content });
     } catch (error) {
         logger.error('OpenAI Error:', error);
-        res.json({ response: "Abhi main thoda busy hoon (API issue). Lekin voting zaroori hai!" });
+        res.json({ response: `⚠️ Diagnostic Error: ${error.message}. Please check your OpenRouter balance and API key.` });
     }
 });
 
@@ -101,7 +101,8 @@ app.post('/api/verify', async (req, res) => {
         });
         res.json({ result: response.choices[0].message.content });
     } catch (error) {
-        res.json({ result: "Verdict: Error | Reason: Verification service temporarily unavailable. Hamesha official sources check karein." });
+        logger.error('Verification Error:', error);
+        res.json({ result: `Verdict: Error | Reason: ${error.message}` });
     }
 });
 
