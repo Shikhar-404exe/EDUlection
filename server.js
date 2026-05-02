@@ -15,15 +15,15 @@ const logger = winston.createLogger({
 });
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 8080; // Default to 8080 for Cloud Run
 
 app.use(express.json());
 app.use(express.static('public'));
 
-// Initialize Vertex AI
+// Initialize Vertex AI with a highly stable model and region
 const vertexAI = new VertexAI({ project: 'edulection', location: 'us-central1' });
 const generativeModel = vertexAI.getGenerativeModel({
-    model: 'gemini-1.5-flash',
+    model: 'gemini-1.5-flash-002',
 });
 
 const SYSTEM_PROMPT = `
@@ -42,7 +42,7 @@ app.post('/api/chat', async (req, res) => {
         const chat = generativeModel.startChat({
             history: [
                 { role: 'user', parts: [{ text: `${SYSTEM_PROMPT} Current User Role: ${role}` }] },
-                { role: 'model', parts: [{ text: "Understood. I am ready to assist as EDUlection AI." }] },
+                { role: 'model', parts: [{ text: "Understood. I am EDUlection AI, your civic assistant. How can I help you today?" }] },
             ],
         });
 
@@ -53,7 +53,7 @@ app.post('/api/chat', async (req, res) => {
         res.json({ response: text });
     } catch (error) {
         logger.error('Vertex AI Error:', error);
-        res.json({ response: `⚠️ Vertex AI Error: ${error.message}. Please ensure the Vertex AI API is enabled in your Google Cloud Console.` });
+        res.json({ response: `⚠️ Vertex AI Error: ${error.message}. If the issue persists, ensure Vertex AI API is fully propagated in your GCP project.` });
     }
 });
 
