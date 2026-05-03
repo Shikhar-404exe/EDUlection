@@ -414,14 +414,32 @@
         /**
          * Voice synthesis with automatic language detection (Hi/En).
          */
-        const speakText = (text) => {
-            if (!('speechSynthesis' in window)) return;
-            window.speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance(text);
-            // Detect Hindi characters to switch voice
-            utterance.lang = text.match(/[\u0900-\u097F]/) ? 'hi-IN' : 'en-IN';
-            utterance.rate = 1.05;
-            window.speechSynthesis.speak(utterance);
+        /**
+         * Enterprise Voice Synthesis using Google Cloud Neural TTS.
+         * Falls back to browser speech if the API is unavailable.
+         */
+        const speakText = async (text) => {
+            try {
+                const response = await fetch('/api/tts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text })
+                });
+                
+                if (!response.ok) throw new Error("TTS API failed");
+
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                const audio = new Audio(url);
+                audio.play();
+            } catch (err) {
+                console.warn("Falling back to browser speech:", err);
+                if (!('speechSynthesis' in window)) return;
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = text.match(/[\u0900-\u097F]/) ? 'hi-IN' : 'en-IN';
+                window.speechSynthesis.speak(utterance);
+            }
         };
 
         // --- UI RENDERERS ---
