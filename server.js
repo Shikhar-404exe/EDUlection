@@ -104,6 +104,10 @@ app.post('/api/verify', async (req, res) => {
     }
 });
 
-app.listen(port, () => {
-    logger.info(`Server running at http://localhost:${port}`);
-});
+if (require.main === module) {
+    app.listen(port, () => {
+        logger.info(`Server running at http://localhost:${port}`);
+    });
+}
+
+module.exports = app;
