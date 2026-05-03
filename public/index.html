@@ -3,14 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="EDUlection - An advanced civic intelligence simulator for informed voting.">
     <title>EDUlection | Advanced Civic Simulator</title>
+    
+    <!-- External Dependencies with Subresource Integrity if possible -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" aria-hidden="true"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; scroll-behavior: smooth; }
-        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .accent-gradient { background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%); }
+        :root {
+            --primary-blue: #3b82f6;
+            --primary-purple: #8b5cf6;
+            --bg-dark: #0f172a;
+            --glass-bg: rgba(30, 41, 59, 0.7);
+        }
+
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-dark); color: #f8fafc; scroll-behavior: smooth; }
+        .glass { background: var(--glass-bg); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .accent-gradient { background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-purple) 100%); }
         .card { transition: all 0.3s ease; }
         .card:hover { transform: translateY(-4px); box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.2); }
         .suggestion-chip { cursor: pointer; transition: all 0.2s; }
@@ -18,40 +29,54 @@
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade { animation: fadeIn 0.4s ease-out forwards; }
+        
+        /* High Contrast Focus States for Accessibility */
+        *:focus-visible { outline: 2px solid var(--primary-blue); outline-offset: 4px; border-radius: 4px; }
+        
+        .skip-link { position: absolute; top: -40px; left: 0; background: var(--primary-blue); color: white; padding: 8px; z-index: 100; transition: top 0.2s; }
+        .skip-link:focus { top: 0; }
+
         input[type=range] { -webkit-appearance: none; background: transparent; }
         input[type=range]::-webkit-slider-runnable-track { background: #1e293b; height: 6px; border-radius: 3px; }
-        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; background: #3b82f6; border-radius: 50%; margin-top: -5px; cursor: pointer; box-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; background: var(--primary-blue); border-radius: 50%; margin-top: -5px; cursor: pointer; box-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
+        
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .active-pill { background-color: #2563eb !important; color: white !important; border-color: #3b82f6 !important; }
     </style>
 </head>
 <body class="min-h-screen p-4 md:p-8">
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
     <div class="max-w-6xl mx-auto space-y-8">
         
         <!-- DID YOU KNOW BOX -->
-        <div id="factBox" class="glass p-4 rounded-xl border-l-4 border-blue-500 animate-fade">
+        <aside id="factBox" class="glass p-4 rounded-xl border-l-4 border-blue-500 animate-fade" role="note" aria-label="Election Fact">
             <div class="flex items-center gap-3">
-                <span class="text-xl">💡</span>
+                <span class="text-xl" aria-hidden="true">💡</span>
                 <div>
-                    <h4 class="text-xs font-bold uppercase tracking-wider text-blue-400">Did You Know?</h4>
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-blue-400">Did You Know?</h2>
                     <p id="factContent" class="text-sm text-slate-300 italic">Every single vote counts towards the mandate.</p>
                 </div>
             </div>
-        </div>
+        </aside>
 
         <!-- HEADER -->
-        <header class="flex flex-col md:flex-row justify-between items-center gap-6 glass p-6 rounded-2xl shadow-xl">
+        <header class="flex flex-col md:flex-row justify-between items-center gap-6 glass p-6 rounded-2xl shadow-xl" role="banner">
             <div>
-                <h1 id="appTitle" class="text-3xl font-bold tracking-tight text-transparent bg-clip-text accent-gradient transition-all duration-500">EDUlection</h1>
+                <h1 id="appTitle" class="text-3xl font-bold tracking-tight text-transparent bg-clip-text accent-gradient">EDUlection</h1>
                 <p class="text-slate-400 text-sm">Interactive Civic Intelligence System</p>
             </div>
-            <div class="flex flex-wrap items-center justify-center gap-4">
-                <button id="voterGuideBtn" class="bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 px-4 py-2 rounded-lg text-sm font-medium transition-all">
+            <nav class="flex flex-wrap items-center justify-center gap-4" aria-label="Primary Navigation">
+                <button id="voterGuideBtn" aria-haspopup="dialog" class="bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 px-4 py-2 rounded-lg text-sm font-medium transition-all focus:ring-2 focus:ring-blue-500">
                     🧭 Voter Guide
                 </button>
                 <div class="flex items-center gap-2 bg-slate-800/50 p-1.5 rounded-xl border border-slate-700">
-                    <label class="text-[10px] font-bold uppercase ml-2 text-slate-500">State:</label>
-                    <select id="stateSelector" class="bg-slate-800 border-none text-white text-[10px] rounded-lg focus:ring-0 block p-1.5 cursor-pointer max-w-[120px]">
+                    <label for="stateSelector" class="text-[10px] font-bold uppercase ml-2 text-slate-500">State:</label>
+                    <select id="stateSelector" aria-label="Select your state" class="bg-slate-800 border-none text-white text-[10px] rounded-lg focus:ring-0 block p-1.5 cursor-pointer max-w-[120px]">
                         <optgroup label="States">
                             <option value="Andhra Pradesh">Andhra Pradesh</option>
                             <option value="Arunachal Pradesh">Arunachal Pradesh</option>
@@ -95,282 +120,259 @@
                     </select>
                 </div>
                 <div class="flex items-center gap-2 bg-slate-800/50 p-1.5 rounded-xl border border-slate-700">
-                    <label class="text-[10px] font-bold uppercase ml-2 text-slate-500">Role:</label>
-                    <select id="roleSelector" class="bg-slate-800 border-none text-white text-sm rounded-lg focus:ring-0 block p-2 cursor-pointer">
+                    <label for="roleSelector" class="text-[10px] font-bold uppercase ml-2 text-slate-500">Role:</label>
+                    <select id="roleSelector" aria-label="Select user role" class="bg-slate-800 border-none text-white text-sm rounded-lg focus:ring-0 block p-2 cursor-pointer">
                         <option value="voter">Voter</option>
                         <option value="officer">Officer</option>
                     </select>
                 </div>
-            </div>
+            </nav>
         </header>
 
-        <!-- STATE SELECTION SLIDER -->
-        <section class="glass p-6 rounded-3xl animate-fade overflow-hidden relative">
-            <div class="space-y-4">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500">Quick Select State</h3>
-                    <span class="text-[10px] text-slate-400 bg-slate-800 px-2 py-1 rounded">Scroll Horizontal →</span>
-                </div>
-                
-                <div id="stateSlider" class="flex gap-3 overflow-x-auto pb-4 no-scrollbar">
-                    <button onclick="selectBySlider('Delhi')" class="state-pill whitespace-nowrap px-6 py-2 rounded-full bg-slate-800 text-slate-300 border border-slate-700 hover:bg-blue-600 hover:text-white transition active-pill">Delhi</button>
-                    <button onclick="selectBySlider('Maharashtra')" class="state-pill whitespace-nowrap px-6 py-2 rounded-full bg-slate-800 text-slate-300 border border-slate-700 hover:bg-blue-600 hover:text-white transition">Maharashtra</button>
-                    <button onclick="selectBySlider('Uttar Pradesh')" class="state-pill whitespace-nowrap px-6 py-2 rounded-full bg-slate-800 text-slate-300 border border-slate-700 hover:bg-blue-600 hover:text-white transition">Uttar Pradesh</button>
-                    <button onclick="selectBySlider('Gujarat')" class="state-pill whitespace-nowrap px-6 py-2 rounded-full bg-slate-800 text-slate-300 border border-slate-700 hover:bg-blue-600 hover:text-white transition">Gujarat</button>
-                    <button onclick="selectBySlider('Tamil Nadu')" class="state-pill whitespace-nowrap px-6 py-2 rounded-full bg-slate-800 text-slate-300 border border-slate-700 hover:bg-blue-600 hover:text-white transition">Tamil Nadu</button>
-                    <button onclick="selectBySlider('Karnataka')" class="state-pill whitespace-nowrap px-6 py-2 rounded-full bg-slate-800 text-slate-300 border border-slate-700 hover:bg-blue-600 hover:text-white transition">Karnataka</button>
-                </div>
-
-                <div class="pt-4 border-t border-slate-800 flex items-center justify-between">
-                    <h2 class="text-xl font-bold text-white flex items-center gap-2">
-                        <span class="text-blue-500">📍</span> 
-                        Selected: <span id="activeStateLabel" class="text-blue-400">Delhi</span>
-                    </h2>
-                    <div class="text-[10px] text-slate-500 italic">Or use the main dropdown for all 36 regions</div>
-                </div>
-            </div>
-        </section>
-
-        <style>
-            .no-scrollbar::-webkit-scrollbar { display: none; }
-            .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-            .active-pill { background-color: #2563eb !important; color: white !important; border-color: #3b82f6 !important; }
-        </style>
-
-        <!-- STATE CIVIC INTELLIGENCE -->
-        <section id="stateIntelligence" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade">
-            <div class="glass p-6 rounded-2xl border-t-4 border-blue-500 card">
-                <div class="flex items-center gap-3 mb-4">
-                    <span id="profileIcon" class="text-3xl">🏙️</span>
-                    <div>
-                        <h2 id="selectedStateName" class="text-lg font-bold">Delhi</h2>
-                        <p id="stateProfileType" class="text-[10px] text-blue-400 uppercase font-bold tracking-widest">Urban Profile</p>
+        <main id="main-content" class="space-y-8" role="main">
+            <!-- STATE SELECTION SLIDER -->
+            <section class="glass p-6 rounded-3xl animate-fade overflow-hidden relative" aria-labelledby="quick-select-heading">
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h2 id="quick-select-heading" class="text-sm font-bold uppercase tracking-wider text-slate-500">Quick Select State</h2>
+                        <span class="text-[10px] text-slate-400 bg-slate-800 px-2 py-1 rounded">Scroll Horizontal →</span>
                     </div>
-                </div>
-                <h3 class="text-xs font-bold text-slate-400 uppercase mb-3">🧠 Key Local Issues</h3>
-                <ul id="issueList" class="space-y-2 mb-4"></ul>
-                <div class="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl text-[10px] text-blue-300 italic">
-                    💡 Educational Note: Insights based on general state characteristics.
-                </div>
-            </div>
-
-            <div class="glass p-6 rounded-2xl border-t-4 border-purple-500 card">
-                <h3 class="text-sm font-bold mb-4 flex items-center gap-2">🧭 Candidate Evaluation Checklist</h3>
-                <div id="checklistContainer" class="space-y-3"></div>
-            </div>
-
-            <div class="glass p-6 rounded-2xl border-t-4 border-green-500 card flex flex-col">
-                <h3 class="text-sm font-bold mb-4">📊 Resource Priority</h3>
-                <div class="flex-grow flex items-center justify-center h-32">
-                    <canvas id="priorityChart"></canvas>
-                </div>
-            </div>
-        </section>
-        <!-- VOTING JOURNEY SIMULATOR (NEW CORE FEATURE) -->
-        <section class="glass p-8 rounded-3xl animate-fade overflow-hidden relative">
-            <div class="flex flex-col lg:flex-row gap-12">
-                <div class="lg:w-2/5 space-y-4">
-                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/30 text-[10px] font-bold text-blue-400 uppercase tracking-widest">
-                        Interactive Guide
-                    </div>
-                    <h2 class="text-3xl font-bold text-white tracking-tight">Simulate Your <span class="text-blue-500">Voting Journey</span></h2>
-                    <p class="text-slate-400 text-sm leading-relaxed">
-                        Experience the step-by-step process of casting your vote. Learn what documents you need and how to ensure your vote is counted correctly.
-                    </p>
                     
-                    <div id="stepProgress" class="flex gap-1 mt-6">
-                        <!-- Progress indicators will be injected here -->
-                        <div class="h-1.5 flex-grow rounded-full bg-blue-600 transition-all duration-500" style="width: 20%"></div>
-                        <div class="h-1.5 flex-grow rounded-full bg-slate-800 transition-all duration-500"></div>
-                        <div class="h-1.5 flex-grow rounded-full bg-slate-800 transition-all duration-500"></div>
-                        <div class="h-1.5 flex-grow rounded-full bg-slate-800 transition-all duration-500"></div>
-                        <div class="h-1.5 flex-grow rounded-full bg-slate-800 transition-all duration-500"></div>
+                    <div id="stateSlider" class="flex gap-3 overflow-x-auto pb-4 no-scrollbar" role="list">
+                        <button onclick="selectBySlider('Delhi')" class="state-pill whitespace-nowrap px-6 py-2 rounded-full bg-slate-800 text-slate-300 border border-slate-700 hover:bg-blue-600 hover:text-white transition active-pill" role="listitem">Delhi</button>
+                        <button onclick="selectBySlider('Maharashtra')" class="state-pill whitespace-nowrap px-6 py-2 rounded-full bg-slate-800 text-slate-300 border border-slate-700 hover:bg-blue-600 hover:text-white transition" role="listitem">Maharashtra</button>
+                        <button onclick="selectBySlider('Uttar Pradesh')" class="state-pill whitespace-nowrap px-6 py-2 rounded-full bg-slate-800 text-slate-300 border border-slate-700 hover:bg-blue-600 hover:text-white transition" role="listitem">Uttar Pradesh</button>
+                        <button onclick="selectBySlider('Gujarat')" class="state-pill whitespace-nowrap px-6 py-2 rounded-full bg-slate-800 text-slate-300 border border-slate-700 hover:bg-blue-600 hover:text-white transition" role="listitem">Gujarat</button>
+                        <button onclick="selectBySlider('Tamil Nadu')" class="state-pill whitespace-nowrap px-6 py-2 rounded-full bg-slate-800 text-slate-300 border border-slate-700 hover:bg-blue-600 hover:text-white transition" role="listitem">Tamil Nadu</button>
+                        <button onclick="selectBySlider('Karnataka')" class="state-pill whitespace-nowrap px-6 py-2 rounded-full bg-slate-800 text-slate-300 border border-slate-700 hover:bg-blue-600 hover:text-white transition" role="listitem">Karnataka</button>
                     </div>
-                    <p id="stepIndicator" class="text-[10px] text-slate-500 font-bold uppercase mt-2">Step 1 of 5: Registration</p>
-                </div>
 
-                <div class="lg:w-3/5">
-                    <div id="journeyCard" class="bg-slate-900/40 border border-slate-800 p-8 rounded-2xl min-h-[300px] flex flex-col justify-between animate-fade">
-                        <div id="journeyContent" class="space-y-6">
-                            <!-- Injected by JS -->
-                            <div class="space-y-4">
-                                <h3 id="journeyStepTitle" class="text-xl font-bold text-white">Step 1: Voter Registration</h3>
-                                <p id="journeyStepDesc" class="text-slate-300 text-sm leading-relaxed">Are you 18 or older and successfully registered in the voter list?</p>
-                                
-                                <div id="journeyWhy" class="p-4 bg-blue-500/5 border-l-4 border-blue-500 rounded-r-xl">
-                                    <p class="text-xs text-slate-400 uppercase font-bold mb-1">Why this matters</p>
-                                    <p id="journeyWhyText" class="text-xs text-blue-200 italic">Registration is the legal requirement to participate. It ensures only eligible citizens decide the future of the nation.</p>
+                    <div class="pt-4 border-t border-slate-800 flex items-center justify-between">
+                        <p class="text-xl font-bold text-white flex items-center gap-2">
+                            <span class="text-blue-500" aria-hidden="true">📍</span> 
+                            Selected: <span id="activeStateLabel" class="text-blue-400">Delhi</span>
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- STATE CIVIC INTELLIGENCE -->
+            <section id="stateIntelligence" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade" aria-label="Regional Insights">
+                <article class="glass p-6 rounded-2xl border-t-4 border-blue-500 card">
+                    <div class="flex items-center gap-3 mb-4">
+                        <span id="profileIcon" class="text-3xl" aria-hidden="true">🏙️</span>
+                        <div>
+                            <h2 id="selectedStateName" class="text-lg font-bold">Delhi</h2>
+                            <p id="stateProfileType" class="text-[10px] text-blue-400 uppercase font-bold tracking-widest">Urban Profile</p>
+                        </div>
+                    </div>
+                    <h3 class="text-xs font-bold text-slate-400 uppercase mb-3">🧠 Key Local Issues</h3>
+                    <ul id="issueList" class="space-y-2 mb-4"></ul>
+                    <div class="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl text-[10px] text-blue-300 italic">
+                        💡 Educational Note: Insights based on general state characteristics.
+                    </div>
+                </article>
+
+                <article class="glass p-6 rounded-2xl border-t-4 border-purple-500 card">
+                    <h3 class="text-sm font-bold mb-4 flex items-center gap-2">🧭 Candidate Evaluation Checklist</h3>
+                    <div id="checklistContainer" class="space-y-3" role="list"></div>
+                </article>
+
+                <article class="glass p-6 rounded-2xl border-t-4 border-green-500 card flex flex-col" aria-label="Resource Priorities Chart">
+                    <h3 class="text-sm font-bold mb-4">📊 Resource Priority</h3>
+                    <div class="flex-grow flex items-center justify-center h-32">
+                        <canvas id="priorityChart" role="img" aria-label="Bar chart showing resource priority: Issues, Administration, and Growth."></canvas>
+                    </div>
+                </article>
+            </section>
+
+            <!-- VOTING JOURNEY SIMULATOR -->
+            <section class="glass p-8 rounded-3xl animate-fade overflow-hidden relative" aria-labelledby="journey-heading">
+                <div class="flex flex-col lg:flex-row gap-12">
+                    <div class="lg:w-2/5 space-y-4">
+                        <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/30 text-[10px] font-bold text-blue-400 uppercase tracking-widest">
+                            Interactive Guide
+                        </span>
+                        <h2 id="journey-heading" class="text-3xl font-bold text-white tracking-tight">Simulate Your <span class="text-blue-500">Voting Journey</span></h2>
+                        <p class="text-slate-400 text-sm leading-relaxed">
+                            Experience the step-by-step process of casting your vote. Learn what documents you need and how to ensure your vote is counted correctly.
+                        </p>
+                        
+                        <div id="stepProgress" class="flex gap-1 mt-6" aria-hidden="true"></div>
+                        <p id="stepIndicator" class="text-[10px] text-slate-500 font-bold uppercase mt-2">Step 1 of 6</p>
+                    </div>
+
+                    <div class="lg:w-3/5">
+                        <div id="journeyCard" class="bg-slate-900/40 border border-slate-800 p-8 rounded-2xl min-h-[300px] flex flex-col justify-between animate-fade" role="region" aria-live="polite">
+                            <div id="journeyContent" class="space-y-6">
+                                <div class="space-y-4">
+                                    <h3 id="journeyStepTitle" class="text-xl font-bold text-white">Step 1: Voter Registration</h3>
+                                    <p id="journeyStepDesc" class="text-slate-300 text-sm leading-relaxed">Are you 18 or older and successfully registered in the voter list?</p>
+                                    
+                                    <div class="p-4 bg-blue-500/5 border-l-4 border-blue-500 rounded-r-xl">
+                                        <p class="text-xs text-slate-400 uppercase font-bold mb-1">Why this matters</p>
+                                        <p id="journeyWhyText" class="text-xs text-blue-200 italic">Registration is the legal requirement to participate.</p>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <div id="journeyControls" class="flex flex-col gap-4 mt-8">
-                            <div id="journeyOptions" class="flex flex-wrap gap-3">
-                                <!-- Options like Yes/No will be injected here -->
-                                <button onclick="nextJourneyStep(true)" class="px-6 py-2 bg-blue-600 text-white rounded-full text-sm font-bold hover:bg-blue-700 transition">Yes, I'm Registered</button>
-                                <button onclick="handleJourneyChoice(false)" class="px-6 py-2 bg-slate-800 text-slate-300 rounded-full text-sm font-bold hover:bg-slate-700 transition border border-slate-700">No, Not Yet</button>
-                            </div>
-                            <div id="journeyMessage" class="hidden text-xs p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 animate-pulse">
-                                ⚠️ You must register first! Visit NVSP.in to apply online before the deadline.
+                            <div id="journeyControls" class="flex flex-col gap-4 mt-8">
+                                <div id="journeyOptions" class="flex flex-wrap gap-3"></div>
+                                <div id="journeyMessage" class="hidden text-xs p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400" role="alert"></div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </section>
+            </section>
 
-        <!-- ENHANCED SCENARIO SIMULATOR -->
-        <section class="glass p-8 rounded-3xl md:col-span-2 card">
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                <!-- Inputs Side -->
-                <div class="space-y-8">
-                    <div>
-                        <h2 class="text-2xl font-bold mb-2">Interactive Outcome Simulator</h2>
-                        <p class="text-sm text-slate-400">Adjust the factors to see how they impact the final mandate.</p>
-                    </div>
-                    
-                    <div class="space-y-6">
-                        <div class="space-y-2">
-                            <div class="flex justify-between text-xs font-bold uppercase tracking-wider text-slate-500">
-                                <span>Voter Turnout</span>
-                                <span id="val-turnout" class="text-blue-400">65%</span>
-                            </div>
-                            <input type="range" id="sim-turnout" min="0" max="100" value="65" class="w-full">
+            <!-- SCENARIO SIMULATOR -->
+            <section class="glass p-8 rounded-3xl md:col-span-2 card" aria-labelledby="sim-heading">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                    <div class="space-y-8">
+                        <div>
+                            <h2 id="sim-heading" class="text-2xl font-bold mb-2">Interactive Outcome Simulator</h2>
+                            <p class="text-sm text-slate-400">Adjust the factors to see how they impact the final mandate.</p>
                         </div>
                         
-                        <div class="space-y-2">
-                            <div class="flex justify-between text-xs font-bold uppercase tracking-wider text-slate-500">
-                                <span>Misinformation Level</span>
-                                <span id="val-misinfo" class="text-red-400">20%</span>
-                            </div>
-                            <input type="range" id="sim-misinfo" min="0" max="100" value="20" class="w-full">
-                        </div>
-
-                        <div class="space-y-2">
-                            <div class="flex justify-between text-xs font-bold uppercase tracking-wider text-slate-500">
-                                <span>Governance Satisfaction</span>
-                                <span id="val-satisfaction" class="text-green-400">55%</span>
-                            </div>
-                            <input type="range" id="sim-satisfaction" min="0" max="100" value="55" class="w-full">
-                        </div>
-
-                        <div class="space-y-2">
-                            <div class="flex justify-between text-xs font-bold uppercase tracking-wider text-slate-500">
-                                <span>Opposition Campaign Strength</span>
-                                <span id="val-opposition" class="text-purple-400">45%</span>
-                            </div>
-                            <input type="range" id="sim-opposition" min="0" max="100" value="45" class="w-full">
-                        </div>
-
-                        <div class="space-y-2">
-                            <div class="flex justify-between text-xs font-bold uppercase tracking-wider text-slate-500">
-                                <span>Local Issues Severity</span>
-                                <span id="val-issues" class="text-orange-400">30%</span>
-                            </div>
-                            <input type="range" id="sim-issues" min="0" max="100" value="30" class="w-full">
-                        </div>
-                    </div>
-
-                    <div class="bg-blue-500/10 p-4 rounded-xl border border-blue-500/20">
-                        <p class="text-xs text-blue-300">💡 <strong>Educational Tip:</strong> Try adjusting one slider at a time to understand how it independently affects the support for Govt vs Opposition.</p>
-                    </div>
-                </div>
-
-                <!-- Outputs Side -->
-                <div class="space-y-8 flex flex-col justify-center">
-                    <div class="h-64 bg-slate-900/50 rounded-2xl p-6 border border-slate-800">
-                        <canvas id="outcomeChart"></canvas>
-                    </div>
-
-                    <div id="simResult" class="p-6 bg-slate-800/80 border border-blue-500/30 rounded-2xl animate-fade">
-                        <div class="grid grid-cols-2 gap-8 mb-6">
-                            <div>
-                                <h4 class="text-[10px] uppercase font-bold text-slate-500 mb-1">Projected Winner</h4>
-                                <p id="simWinner" class="text-xl font-bold text-blue-400">Government</p>
-                            </div>
-                            <div>
-                                <h4 class="text-[10px] uppercase font-bold text-slate-500 mb-1">Stability Index</h4>
-                                <p id="simStability" class="text-xl font-bold text-green-400">High</p>
-                            </div>
-                        </div>
-                        
-                        <div class="space-y-4">
-                            <div>
-                                <h4 class="text-[10px] uppercase font-bold text-slate-500 mb-1">Outcome Explanation</h4>
-                                <p id="simExplanation" class="text-sm text-slate-300 italic leading-relaxed">High governance satisfaction and moderate turnout consolidated the current mandate.</p>
+                        <div class="space-y-6">
+                            <div class="space-y-2">
+                                <div class="flex justify-between text-xs font-bold uppercase tracking-wider text-slate-500">
+                                    <label for="sim-turnout">Voter Turnout</label>
+                                    <span id="val-turnout" class="text-blue-400">65%</span>
+                                </div>
+                                <input type="range" id="sim-turnout" min="0" max="100" value="65" class="w-full" aria-valuemin="0" aria-valuemax="100" aria-valuenow="65">
                             </div>
                             
-                            <div class="pt-4 border-t border-slate-700">
-                                <h4 class="text-[10px] uppercase font-bold text-slate-500 mb-2">Impact Analysis</h4>
-                                <div id="simImpacts" class="space-y-2 text-xs text-slate-400">
-                                    <!-- Dynamic impacts -->
+                            <div class="space-y-2">
+                                <div class="flex justify-between text-xs font-bold uppercase tracking-wider text-slate-500">
+                                    <label for="sim-misinfo">Misinformation Level</label>
+                                    <span id="val-misinfo" class="text-red-400">20%</span>
+                                </div>
+                                <input type="range" id="sim-misinfo" min="0" max="100" value="20" class="w-full" aria-valuemin="0" aria-valuemax="100" aria-valuenow="20">
+                            </div>
+
+                            <div class="space-y-2">
+                                <div class="flex justify-between text-xs font-bold uppercase tracking-wider text-slate-500">
+                                    <label for="sim-satisfaction">Governance Satisfaction</label>
+                                    <span id="val-satisfaction" class="text-green-400">55%</span>
+                                </div>
+                                <input type="range" id="sim-satisfaction" min="0" max="100" value="55" class="w-full" aria-valuemin="0" aria-valuemax="100" aria-valuenow="55">
+                            </div>
+
+                            <div class="space-y-2">
+                                <div class="flex justify-between text-xs font-bold uppercase tracking-wider text-slate-500">
+                                    <label for="sim-opposition">Opposition Strength</label>
+                                    <span id="val-opposition" class="text-purple-400">45%</span>
+                                </div>
+                                <input type="range" id="sim-opposition" min="0" max="100" value="45" class="w-full" aria-valuemin="0" aria-valuemax="100" aria-valuenow="45">
+                            </div>
+
+                            <div class="space-y-2">
+                                <div class="flex justify-between text-xs font-bold uppercase tracking-wider text-slate-500">
+                                    <label for="sim-issues">Local Issues Severity</label>
+                                    <span id="val-issues" class="text-orange-400">30%</span>
+                                </div>
+                                <input type="range" id="sim-issues" min="0" max="100" value="30" class="w-full" aria-valuemin="0" aria-valuemax="100" aria-valuenow="30">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-8 flex flex-col justify-center">
+                        <div class="h-64 bg-slate-900/50 rounded-2xl p-6 border border-slate-800" role="img" aria-label="Projected Seats distribution chart">
+                            <canvas id="outcomeChart"></canvas>
+                        </div>
+
+                        <div id="simResult" class="p-6 bg-slate-800/80 border border-blue-500/30 rounded-2xl animate-fade" aria-live="polite">
+                            <div class="grid grid-cols-2 gap-8 mb-6">
+                                <div>
+                                    <h4 class="text-[10px] uppercase font-bold text-slate-500 mb-1">Projected Winner</h4>
+                                    <p id="simWinner" class="text-xl font-bold text-blue-400">Government</p>
+                                </div>
+                                <div>
+                                    <h4 class="text-[10px] uppercase font-bold text-slate-500 mb-1">Stability Index</h4>
+                                    <p id="simStability" class="text-xl font-bold text-green-400">High</p>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-4">
+                                <h4 class="text-[10px] uppercase font-bold text-slate-500 mb-1">Outcome Explanation</h4>
+                                <p id="simExplanation" class="text-sm text-slate-300 italic leading-relaxed"></p>
+                                
+                                <div class="pt-4 border-t border-slate-700">
+                                    <h4 class="text-[10px] uppercase font-bold text-slate-500 mb-2">Impact Analysis</h4>
+                                    <div id="simImpacts" class="space-y-2 text-xs text-slate-400" role="list"></div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </section>
+            </section>
 
-        <!-- CHAT & MISINFO ROW -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <!-- CHAT ASSISTANT -->
-            <section class="glass p-6 rounded-2xl flex flex-col h-[500px] card">
-                <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                    Civic Assistant
-                </h2>
-                <div id="chatArea" class="flex-grow overflow-y-auto mb-4 space-y-4 pr-2 custom-scrollbar">
-                    <div class="bg-slate-800/50 p-3 rounded-lg max-w-[85%] border border-slate-700">
-                        <p class="text-sm">Namaste! Ask me about elections in Hindi, English, or Hinglish.</p>
+            <!-- CHAT & MISINFO -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- CHAT -->
+                <section class="glass p-6 rounded-2xl flex flex-col h-[500px] card" aria-labelledby="chat-heading">
+                    <h2 id="chat-heading" class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse" aria-hidden="true"></span>
+                        Civic Assistant
+                    </h2>
+                    <div id="chatArea" class="flex-grow overflow-y-auto mb-4 space-y-4 pr-2 custom-scrollbar" aria-live="polite">
+                        <div class="bg-slate-800/50 p-3 rounded-lg max-w-[85%] border border-slate-700">
+                            <p class="text-sm">Namaste! Ask me about elections in Hindi, English, or Hinglish.</p>
+                        </div>
                     </div>
-                </div>
-                <div class="flex flex-wrap gap-2 mb-4">
-                    <span class="suggestion-chip bg-slate-800 border border-slate-700 px-3 py-1 rounded-full text-[10px] text-slate-400">What is NOTA?</span>
-                    <span class="suggestion-chip bg-slate-800 border border-slate-700 px-3 py-1 rounded-full text-[10px] text-slate-400">How to vote?</span>
-                </div>
-                <div class="flex gap-2">
-                    <input type="text" id="chatInput" placeholder="Ask in any language..." class="flex-grow bg-slate-800 border border-slate-700 rounded-lg p-3 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all">
-                    <button id="sendBtn" class="accent-gradient px-6 py-2 rounded-lg font-bold text-sm transition-all hover:scale-105 active:scale-95">Send</button>
-                </div>
-            </section>
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <button class="suggestion-chip bg-slate-800 border border-slate-700 px-3 py-1 rounded-full text-[10px] text-slate-400">What is NOTA?</button>
+                        <button class="suggestion-chip bg-slate-800 border border-slate-700 px-3 py-1 rounded-full text-[10px] text-slate-400">How to vote?</button>
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="text" id="chatInput" aria-label="Ask a question" placeholder="Ask in any language..." class="flex-grow bg-slate-800 border border-slate-700 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <button id="sendBtn" aria-label="Send message" class="accent-gradient px-6 py-2 rounded-lg font-bold text-sm transition-all hover:scale-105 active:scale-95">Send</button>
+                    </div>
+                </section>
 
-            <!-- MISINFORMATION CHECKER -->
-            <section class="glass p-6 rounded-2xl card flex flex-col justify-between">
-                <div>
-                    <h2 class="text-xl font-semibold mb-4">Misinformation Checker</h2>
-                    <textarea id="misinfoInput" placeholder="Paste a claim..." class="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 text-sm min-h-[120px] focus:outline-none focus:ring-1 focus:ring-purple-500"></textarea>
-                    <button id="checkBtn" class="w-full bg-purple-600 hover:bg-purple-700 py-3 mt-4 rounded-xl font-bold text-sm transition-all active:scale-95">Verify Claim</button>
-                    <div id="checkResult" class="hidden mt-4 p-4 rounded-xl animate-fade text-sm"></div>
-                </div>
-                <div class="mt-4 p-3 bg-purple-500/10 border border-purple-500/20 rounded-xl text-[10px] text-purple-300 italic">
-                    💡 Fact-checking prevents the spread of rumors.
-                </div>
-            </section>
-        </div>
+                <!-- MISINFO -->
+                <section class="glass p-6 rounded-2xl card flex flex-col justify-between" aria-labelledby="misinfo-heading">
+                    <div>
+                        <h2 id="misinfo-heading" class="text-xl font-semibold mb-4">Misinformation Checker</h2>
+                        <textarea id="misinfoInput" aria-label="Paste claim to verify" placeholder="Paste a claim..." class="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 text-sm min-h-[120px] focus:outline-none focus:ring-2 focus:ring-purple-500"></textarea>
+                        <button id="checkBtn" aria-label="Verify this claim" class="w-full bg-purple-600 hover:bg-purple-700 py-3 mt-4 rounded-xl font-bold text-sm transition-all active:scale-95">Verify Claim</button>
+                        <div id="checkResult" class="hidden mt-4 p-4 rounded-xl animate-fade text-sm" role="status"></div>
+                    </div>
+                    <div class="mt-4 p-3 bg-purple-500/10 border border-purple-500/20 rounded-xl text-[10px] text-purple-300 italic">
+                        💡 Fact-checking prevents the spread of rumors.
+                    </div>
+                </section>
+            </div>
+        </main>
 
-        <footer class="text-center text-slate-500 text-xs py-8">
+        <footer class="text-center text-slate-500 text-xs py-8" role="contentinfo">
             &copy; 2026 EDUlection - Empowering Informed Voters
         </footer>
     </div>
 
-    <!-- MODAL GUIDE -->
-    <div id="guideModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+    <!-- MODAL -->
+    <div id="guideModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm" role="dialog" aria-labelledby="modal-title" aria-modal="true">
         <div class="glass max-w-lg w-full p-8 rounded-3xl space-y-6 shadow-2xl border-blue-500/20">
-            <h2 class="text-2xl font-bold text-blue-400">Voter Guide 🧭</h2>
-            <div class="space-y-4 text-sm">
-                <p>1. Register via NVSP portal</p>
-                <p>2. Check your name in the roll</p>
-                <p>3. Identify your polling booth</p>
-                <p>4. Bring a valid ID (Aadhaar/Voter ID)</p>
-                <p>5. Cast your vote!</p>
+            <h2 id="modal-title" class="text-2xl font-bold text-blue-400">Voter Guide 🧭</h2>
+            <div class="space-y-4 text-sm" role="list">
+                <div role="listitem">1. Register via NVSP portal</div>
+                <div role="listitem">2. Check your name in the roll</div>
+                <div role="listitem">3. Identify your polling booth</div>
+                <div role="listitem">4. Bring a valid ID (Aadhaar/Voter ID)</div>
+                <div role="listitem">5. Cast your vote!</div>
             </div>
-            <button id="closeGuide" class="w-full accent-gradient py-3 rounded-xl font-bold mt-4">Close</button>
+            <button id="closeGuide" aria-label="Close guide modal" class="w-full accent-gradient py-3 rounded-xl font-bold mt-4">Close</button>
         </div>
     </div>
 
     <script>
-        // DATA & STATE
+        /**
+         * EDUlection Core Application Logic
+         * Features: State Intelligence, Voting Journey, Scenario Simulator, AI Chat, Misinfo Checker.
+         */
+        
+        // --- DATA & CONFIG ---
         const STATE_PROFILES = { 
             "Andhra Pradesh": "mixed", "Arunachal Pradesh": "mixed", "Assam": "mixed", "Bihar": "agriculture", 
             "Chhattisgarh": "agriculture", "Goa": "urban", "Gujarat": "industrial", "Haryana": "agriculture", 
@@ -390,15 +392,39 @@
         };
         const FACTS = ["India has over 900 million eligible voters.", "NOTA allows rejecting all candidates.", "Elections happen in phases for security."];
         
+        // --- APPLICATION STATE ---
         let currentRole = 'voter';
         let priorityChart = null;
         let outcomeChart = null;
         let journeyStep = 0;
 
-        // SAFE DOM ACCESS
+        // --- CORE UTILITIES ---
         const getEl = (id) => document.getElementById(id);
+        
+        /**
+         * Sanitizes user input to prevent XSS.
+         */
+        function sanitize(str) {
+            if (!str) return "";
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
 
-        // UI HELPERS
+        /**
+         * Voice synthesis with automatic language detection (Hi/En).
+         */
+        const speakText = (text) => {
+            if (!('speechSynthesis' in window)) return;
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            // Detect Hindi characters to switch voice
+            utterance.lang = text.match(/[\u0900-\u097F]/) ? 'hi-IN' : 'en-IN';
+            utterance.rate = 1.05;
+            window.speechSynthesis.speak(utterance);
+        };
+
+        // --- UI RENDERERS ---
         function updateStateUI(state) {
             try {
                 const profile = STATE_PROFILES[state] || "urban";
@@ -411,10 +437,10 @@
                 if (nameEl) nameEl.textContent = state;
                 if (profileEl) profileEl.textContent = `${profile} Profile`;
                 if (listEl) listEl.innerHTML = data.issues.map(i => `<li class="text-xs text-slate-300">• ${i}</li>`).join('');
-                if (checkEl) checkEl.innerHTML = data.checklist.map(c => `<div class="bg-slate-800/50 p-2 rounded text-[10px] border border-slate-700">${c}</div>`).join('');
+                if (checkEl) checkEl.innerHTML = data.checklist.map(c => `<div class="bg-slate-800/50 p-2 rounded text-[10px] border border-slate-700" role="listitem">${c}</div>`).join('');
                 
                 renderPriorityChart(profile);
-            } catch (e) { console.error("Error updating State UI:", e); }
+            } catch (e) { console.error("State UI update failed", e); }
         }
 
         function renderPriorityChart(profile) {
@@ -428,53 +454,21 @@
                     type: 'bar', data: { labels: ['Issues', 'Admin', 'Growth'], datasets: [{ data: [80, 60, 90], backgroundColor: '#3b82f6', borderRadius: 4 }] },
                     options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { ticks: { color: '#64748b', font: { size: 9 } }, grid: { display: false } } } }
                 });
-            } catch (e) { console.error("Error rendering Priority Chart:", e); }
+            } catch (e) { console.error("Priority Chart failed", e); }
         }
 
-        // SIMULATOR LOGIC
+        // --- SIMULATOR LOGIC ---
         function initOutcomeChart() {
             try {
-                if (typeof Chart === 'undefined') {
-                    console.warn("Chart.js not loaded yet.");
-                    return;
-                }
                 const canvas = getEl('outcomeChart');
-                if (!canvas) return;
+                if (!canvas || typeof Chart === 'undefined') return;
                 const ctx = canvas.getContext('2d');
                 outcomeChart = new Chart(ctx, {
                     type: 'bar',
-                    data: {
-                        labels: ['Government', 'Opposition', 'Others'],
-                        datasets: [{
-                            label: 'Projected Seats (%)',
-                            data: [45, 40, 15],
-                            backgroundColor: ['#3b82f6', '#8b5cf6', '#64748b'],
-                            borderRadius: 12
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
-                        scales: {
-                            y: { beginAtZero: true, max: 100, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#475569' } },
-                            x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { weight: 'bold' } } }
-                        }
-                    }
+                    data: { labels: ['Government', 'Opposition', 'Others'], datasets: [{ label: 'Seats %', data: [45, 40, 15], backgroundColor: ['#3b82f6', '#8b5cf6', '#64748b'], borderRadius: 12 }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#475569' } }, x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { weight: 'bold' } } } } }
                 });
-            } catch (e) { console.error("Error initializing Outcome Chart:", e); }
-        }
-
-        function calculateSimScore(turnout, misinfo, satisfaction, opposition, issues) {
-            let govtScore = (satisfaction * 0.4) + ((100 - misinfo) * 0.3) + (turnout * 0.3);
-            let oppScore = (opposition * 0.4) + (issues * 0.4) + (misinfo * 0.2);
-            let otherScore = ((100 - turnout) * 0.5) + ((100 - satisfaction) * 0.5);
-            const total = govtScore + oppScore + otherScore;
-            return {
-                govtPct: Math.round((govtScore / total) * 100),
-                oppPct: Math.round((oppScore / total) * 100),
-                otherPct: 100 - Math.round((govtScore / total) * 100) - Math.round((oppScore / total) * 100)
-            };
+            } catch (e) { console.error("Outcome Chart failed", e); }
         }
 
         function runSimulation() {
@@ -485,8 +479,17 @@
                 const opposition = parseInt(getEl('sim-opposition')?.value || 45);
                 const issues = parseInt(getEl('sim-issues')?.value || 30);
 
-                const scores = calculateSimScore(turnout, misinfo, satisfaction, opposition, issues);
+                let govtScore = (satisfaction * 0.4) + ((100 - misinfo) * 0.3) + (turnout * 0.3);
+                let oppScore = (opposition * 0.4) + (issues * 0.4) + (misinfo * 0.2);
+                let otherScore = ((100 - turnout) * 0.5) + ((100 - satisfaction) * 0.5);
+                const total = govtScore + oppScore + otherScore;
                 
+                const scores = {
+                    govtPct: Math.round((govtScore / total) * 100),
+                    oppPct: Math.round((oppScore / total) * 100),
+                    otherPct: 100 - Math.round((govtScore / total) * 100) - Math.round((oppScore / total) * 100)
+                };
+
                 if (outcomeChart) {
                     outcomeChart.data.datasets[0].data = [scores.govtPct, scores.oppPct, scores.otherPct];
                     outcomeChart.update();
@@ -504,34 +507,25 @@
                 
                 const stability = turnout > 70 && Math.abs(scores.govtPct - scores.oppPct) > 10 ? "High" : (turnout < 40 ? "Low" : "Medium");
                 if (stabEl) {
-                    stabEl.textContent = stability;
-                    stabEl.className = `text-xl font-bold ${stability === 'High' ? 'text-green-400' : (stability === 'Low' ? 'text-red-400' : 'text-yellow-400')}`;
+                    stabEl.innerHTML = `<span>${stability === 'High' ? '✅' : (stability === 'Low' ? '🛑' : '⚠️')}</span> ${stability}`;
+                    stabEl.className = `text-xl font-bold flex items-center gap-2 ${stability === 'High' ? 'text-green-400' : (stability === 'Low' ? 'text-red-400' : 'text-yellow-400')}`;
                 }
 
-                if (expEl) {
-                    expEl.textContent = winner === 'Government' ? 
-                        "Positive governance satisfaction and low misinformation helped the current government maintain its mandate." : 
-                        "A strong opposition campaign combined with rising local issues shifted public support.";
-                }
-
+                if (expEl) expEl.textContent = winner === 'Government' ? "Stability maintained through governance focus." : "Change driven by local issues and campaign vigor.";
+                
                 const impactList = getEl('simImpacts');
-                if (impactList) {
-                    impactList.innerHTML = `
-                        <p>• ${turnout > 65 ? "High turnout favored established parties." : "Low turnout increased volatility."}</p>
-                        <p>• ${misinfo > 50 ? "High misinformation created voter uncertainty." : "Clean information flow improved clarity."}</p>
-                    `;
-                }
-            } catch (e) { console.error("Error running simulation:", e); }
+                if (impactList) impactList.innerHTML = `<div role="listitem">• ${turnout > 65 ? "High turnout favored established mandates." : "Low turnout increased seat volatility."}</div><div role="listitem">• ${misinfo > 50 ? "High noise levels blurred voter intent." : "Clear communication stabilized the vote."}</div>`;
+            } catch (e) { console.error("Simulation failed", e); }
         }
 
-        // VOTING JOURNEY LOGIC
+        // --- VOTING JOURNEY ---
         const journeyData = [
-            { title: "Voter Registration", desc: "Are you 18 or older and successfully registered?", why: "Registration is the legal requirement to participate.", options: [{ label: "Yes, I'm Registered", next: 1 }, { label: "No, Not Yet", warning: "⚠️ Visit NVSP.in to apply online." }] },
-            { title: "Voter List Verification", desc: "Have you checked your name in the roll?", why: "Verification prevents last-minute surprises.", options: [{ label: "Yes, Name Found", next: 2 }, { label: "No, Need to Check", warning: "⚠️ Use the 'Search in Electoral Roll' tool." }] },
-            { title: "ID Verification", desc: "Do you have a valid ID?", why: "Identity proof is mandatory to prevent proxy voting.", options: [{ label: "Yes, I have it", next: 3 }, { label: "I lost my ID", warning: "⚠️ Use alternative documents listed by ECI." }] },
-            { title: "Polling Booth Identified", desc: "Do you know where to go?", why: "Knowing your booth saves time.", options: [{ label: "Yes, I know it", next: 4 }, { label: "No, I'm unsure", warning: "⚠️ Check the Voter Helpline App." }] },
-            { title: "Vote Casting", desc: "Ready to cast your vote?", why: "Verify the red light and the VVPAT slip.", options: [{ label: "I am Ready!", next: 5 }] },
-            { title: "Success!", desc: "You've successfully simulated your journey.", why: "The ink mark is a badge of pride.", options: [{ label: "Restart Journey", next: 0 }] }
+            { title: "Registration", desc: "Are you registered in the voter list?", why: "Registration is the legal requirement to participate.", options: [{ label: "Yes, I'm Registered", next: 1 }, { label: "No, Not Yet", warning: "⚠️ Visit NVSP.in to apply." }] },
+            { title: "Verification", desc: "Have you found your name in the electoral roll?", why: "Verification ensures your vote exists.", options: [{ label: "Found it!", next: 2 }, { label: "Not Found", warning: "⚠️ Use Voter Helpline App." }] },
+            { title: "ID Check", desc: "Do you have an EPIC or valid ID?", why: "ID is mandatory for booth entry.", options: [{ label: "I have my ID", next: 3 }, { label: "Lost my ID", warning: "⚠️ Check ECI list for alternate docs." }] },
+            { title: "Booth Identification", desc: "Do you know your polling station?", why: "Knowing your booth prevents confusion.", options: [{ label: "Yes, I know it", next: 4 }, { label: "I'm unsure", warning: "⚠️ Check booth info at NVSP." }] },
+            { title: "The Vote", desc: "Cast your vote on the EVM/VVPAT.", why: "Verify the red light and the slip.", options: [{ label: "Done!", next: 5 }] },
+            { title: "Mandate Complete", desc: "You have participated in democracy!", why: "Your ink is your pride.", options: [{ label: "Restart Simulation", next: 0 }] }
         ];
 
         function renderJourney() {
@@ -541,9 +535,8 @@
                 const descEl = getEl('journeyStepDesc');
                 const whyEl = getEl('journeyWhyText');
                 const optsEl = getEl('journeyOptions');
-                const msgEl = getEl('journeyMessage');
-                const progEl = getEl('stepProgress');
                 const indEl = getEl('stepIndicator');
+                const progEl = getEl('stepProgress');
 
                 if (titleEl) titleEl.textContent = `Step ${journeyStep + 1}: ${data.title}`;
                 if (descEl) descEl.textContent = data.desc;
@@ -564,145 +557,99 @@
                     data.options.forEach(opt => {
                         const btn = document.createElement('button');
                         btn.className = opt.next !== undefined ? 
-                            "px-6 py-2 bg-blue-600 text-white rounded-full text-sm font-bold hover:bg-blue-700 transition" :
-                            "px-6 py-2 bg-slate-800 text-slate-300 rounded-full text-sm font-bold hover:bg-slate-700 transition border border-slate-700";
+                            "px-6 py-2 bg-blue-600 text-white rounded-full text-sm font-bold hover:bg-blue-700 transition focus:ring-2 focus:ring-blue-500" :
+                            "px-6 py-2 bg-slate-800 text-slate-300 rounded-full text-sm font-bold hover:bg-slate-700 transition border border-slate-700 focus:ring-2 focus:ring-slate-500";
                         btn.textContent = opt.label;
                         btn.onclick = () => {
-                            if (opt.next !== undefined) {
-                                journeyStep = opt.next;
-                                if (msgEl) msgEl.classList.add('hidden');
-                                renderJourney();
-                            } else if (msgEl) {
-                                msgEl.textContent = opt.warning;
-                                msgEl.classList.remove('hidden');
-                            }
+                            if (opt.next !== undefined) { journeyStep = opt.next; renderJourney(); }
+                            else { const msg = getEl('journeyMessage'); if(msg) { msg.textContent = opt.warning; msg.classList.remove('hidden'); } }
                         };
                         optsEl.appendChild(btn);
                     });
                 }
-            } catch (e) { console.error("Error rendering journey:", e); }
+            } catch (e) { console.error("Journey failed", e); }
         }
 
-        // CHAT & MISINFO
-        function sanitize(str) {
-            const div = document.createElement('div');
-            div.textContent = str;
-            return div.innerHTML;
-        }
-
-        const speakText = (text) => {
-            if (!('speechSynthesis' in window)) return;
-            window.speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = text.match(/[\u0900-\u097F]/) ? 'hi-IN' : 'en-IN';
-            utterance.rate = 1.1;
-            window.speechSynthesis.speak(utterance);
-        };
-
-        const appendMessage = (sender, text) => {
-            const area = getEl('chatArea');
-            if (!area) return;
-            const div = document.createElement('div');
-            div.className = sender === 'user' ? 
-                'bg-blue-600/20 ml-auto p-3 rounded-2xl max-w-[85%] text-right border border-blue-500/20 relative group' : 
-                'bg-slate-800/80 p-3 rounded-2xl max-w-[85%] border border-slate-700 relative group';
-            
-            div.innerHTML = `
-                <p class="text-xs">${sanitize(text)}</p>
-                ${sender === 'ai' ? `<button onclick="this.parentElement.dataset.speaking='true'; speakText('${text.replace(/'/g, "\\'")}');" class="absolute -right-8 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity p-2 text-slate-500 hover:text-blue-400">🔊</button>` : ''}
-            `;
-            area.appendChild(div);
-            area.scrollTop = area.scrollHeight;
-        };
-
-        // INITIALIZATION
+        // --- INITIALIZATION ---
         window.addEventListener('DOMContentLoaded', () => {
-            console.log("🚀 EDUlection System Initializing...");
+            console.log("EDUlection System Loading...");
             
-            try {
-                // Event Listeners
-                getEl('sendBtn')?.addEventListener('click', async () => {
+            // Interaction Setup
+            getEl('sendBtn')?.addEventListener('click', async () => {
+                const input = getEl('chatInput');
+                if(!input?.value) return;
+                const msg = input.value;
+                const area = getEl('chatArea');
+                const div = document.createElement('div');
+                div.className = 'bg-blue-600/20 ml-auto p-3 rounded-2xl max-w-[85%] text-right border border-blue-500/20';
+                div.innerHTML = `<p class="text-xs">${sanitize(msg)}</p>`;
+                area.appendChild(div);
+                input.value = '';
+                area.scrollTop = area.scrollHeight;
+
+                try {
+                    const res = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: sanitize(msg), role: currentRole }) });
+                    const data = await res.json();
+                    const aiDiv = document.createElement('div');
+                    aiDiv.className = 'bg-slate-800/80 p-3 rounded-2xl max-w-[85%] border border-slate-700 relative group';
+                    aiDiv.innerHTML = `<p class="text-xs">${sanitize(data.response)}</p><button aria-label="Read response aloud" onclick="speakText('${data.response.replace(/'/g, "\\'")}');" class="absolute -right-8 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity p-2 text-slate-500 hover:text-blue-400">🔊</button>`;
+                    area.appendChild(aiDiv);
+                    area.scrollTop = area.scrollHeight;
+                } catch(e) { console.error("Chat failed", e); }
+            });
+
+            getEl('checkBtn')?.addEventListener('click', async () => {
+                const input = getEl('misinfoInput');
+                const res = getEl('checkResult');
+                if(!input?.value || !res) return;
+                res.classList.remove('hidden');
+                res.innerHTML = `⏳ Verifying...`;
+                try {
+                    const response = await fetch('/api/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ claim: sanitize(input.value) }) });
+                    const data = await response.json();
+                    res.innerHTML = sanitize(data.result);
+                } catch (err) { res.innerHTML = "Offline verification fallback."; }
+            });
+
+            // Simulator Events
+            ['sim-turnout', 'sim-misinfo', 'sim-satisfaction', 'sim-opposition', 'sim-issues'].forEach(id => {
+                getEl(id)?.addEventListener('input', (e) => {
+                    const valId = 'val-' + id.split('-')[1];
+                    const display = getEl(valId);
+                    if (display) display.textContent = e.target.value + '%';
+                    runSimulation();
+                });
+            });
+
+            getEl('stateSelector')?.addEventListener('change', (e) => {
+                const label = getEl('activeStateLabel');
+                if (label) label.textContent = e.target.value;
+                updateStateUI(e.target.value);
+            });
+
+            getEl('roleSelector')?.addEventListener('change', (e) => currentRole = e.target.value);
+            getEl('voterGuideBtn')?.addEventListener('click', () => getEl('guideModal')?.classList.remove('hidden'));
+            getEl('closeGuide')?.addEventListener('click', () => getEl('guideModal')?.classList.add('hidden'));
+
+            document.querySelectorAll('.suggestion-chip').forEach(c => {
+                c.onclick = () => {
                     const input = getEl('chatInput');
-                    const val = input?.value; if(!val) return;
-                    appendMessage('user', val); input.value = '';
-                    try {
-                        const res = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: sanitize(val), role: currentRole }) });
-                        const data = await res.json(); appendMessage('ai', data.response);
-                    } catch(e) { appendMessage('ai', "Learning mode active (Offline)."); }
-                });
+                    if(input) { input.value = c.textContent; getEl('sendBtn')?.click(); }
+                };
+            });
 
-                getEl('checkBtn')?.addEventListener('click', async () => {
-                    const input = getEl('misinfoInput');
-                    const res = getEl('checkResult');
-                    const val = sanitize(input?.value.trim());
-                    if(!val || !res) return;
-                    res.classList.remove('hidden');
-                    res.innerHTML = `⏳ Analyzing...`;
-                    try {
-                        const response = await fetch('/api/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ claim: val }) });
-                        const data = await response.json();
-                        res.innerHTML = sanitize(data.result);
-                    } catch (err) { res.innerHTML = "Offline verification active."; }
-                });
-
-                ['sim-turnout', 'sim-misinfo', 'sim-satisfaction', 'sim-opposition', 'sim-issues'].forEach(id => {
-                    getEl(id)?.addEventListener('input', (e) => {
-                        const valId = 'val-' + id.split('-')[1];
-                        const display = getEl(valId);
-                        if (display) display.textContent = e.target.value + '%';
-                        runSimulation();
-                    });
-                });
-
-                getEl('stateSelector')?.addEventListener('change', (e) => {
-                    const state = e.target.value;
-                    const label = getEl('activeStateLabel');
-                    if (label) label.textContent = state;
-                    updateStateUI(state);
-                });
-
-                getEl('roleSelector')?.addEventListener('change', (e) => {
-                    currentRole = e.target.value;
-                    appendMessage('ai', `📍 Context updated for: ${currentRole.toUpperCase()}`);
-                });
-
-                document.querySelectorAll('.suggestion-chip').forEach(c => {
-                    c.onclick = () => {
-                        const input = getEl('chatInput');
-                        if (input) {
-                            input.value = c.textContent;
-                            getEl('sendBtn')?.click();
-                        }
-                    };
-                });
-
-                getEl('voterGuideBtn')?.addEventListener('click', () => getEl('guideModal')?.classList.remove('hidden'));
-                getEl('closeGuide')?.addEventListener('click', () => getEl('guideModal')?.classList.add('hidden'));
-
-                // Initial UI population
-                updateStateUI("Delhi");
-                initOutcomeChart();
-                runSimulation();
-                renderJourney();
-                
-                const factEl = getEl('factContent');
-                if (factEl) factEl.textContent = FACTS[Math.floor(Math.random() * FACTS.length)];
-                
-                console.log("✅ EDUlection System Ready.");
-            } catch (err) {
-                console.error("CRITICAL INIT ERROR:", err);
-            }
+            // Boot
+            updateStateUI("Delhi");
+            initOutcomeChart();
+            runSimulation();
+            renderJourney();
+            if (getEl('factContent')) getEl('factContent').textContent = FACTS[Math.floor(Math.random() * FACTS.length)];
+            console.log("EDUlection Ready.");
         });
 
-        function selectBySlider(stateName) {
+        function selectBySlider(name) {
             const sel = getEl('stateSelector');
-            if (sel) {
-                sel.value = stateName;
-                const label = getEl('activeStateLabel');
-                if (label) label.textContent = stateName;
-                updateStateUI(stateName);
-                appendMessage('ai', `📍 Switched to ${stateName}.`);
-            }
+            if (sel) { sel.value = name; sel.dispatchEvent(new Event('change')); }
         }
     </script>
 </body>

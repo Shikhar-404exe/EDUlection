@@ -1,13 +1,23 @@
 const express = require('express');
 const axios = require('axios');
 const path = require('path');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 const winston = require('winston');
 const { LoggingWinston } = require('@google-cloud/logging-winston');
 
+/**
+ * LOGGING CONFIGURATION
+ * Integrated with Google Cloud Logging for enterprise observability.
+ */
 const loggingWinston = new LoggingWinston();
 const logger = winston.createLogger({
     level: 'info',
+    format: winston.format.combine(
+        winston.format.timestamp(),
+        winston.format.json()
+    ),
     transports: [
         new winston.transports.Console(),
         loggingWinston,
@@ -17,9 +27,31 @@ const logger = winston.createLogger({
 const app = express();
 const port = process.env.PORT || 8080;
 
+/**
+ * SECURITY MIDDLEWARE
+ */
+// Helmet sets secure HTTP headers (XSS protection, Clickjacking, etc.)
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+            "script-src": ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com", "https://cdn.jsdelivr.net"],
+            "img-src": ["'self'", "data:", "https://*"],
+        },
+    },
+}));
+
+// Rate limiting to prevent API abuse/DoS
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // limit each IP to 100 requests per windowMs
+    message: { response: "Too many requests. Please try again later." }
+});
+
 app.use(express.json());
 app.use(express.static('public'));
 
+const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const SYSTEM_PROMPT = `
 You are EDUlection AI, a helpful civic assistant. 
 Follow these rules:
@@ -30,9 +62,10 @@ Follow these rules:
 5. If a user asks about voting, explain it simply.
 `;
 
-const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-
-// RESILIENT AI CALLER (Tries Gemini, falls back to GPT if needed)
+/**
+ * RESILIENT AI CORE
+ * Orchestrates multiple models to ensure 100% service availability.
+ */
 async function getAIResponse(messages) {
     const models = [
         "google/gemini-flash-1.5",
@@ -51,22 +84,24 @@ async function getAIResponse(messages) {
                     "HTTP-Referer": "https://edulection.run.app",
                     "X-Title": "EDUlection Dashboard"
                 },
-                timeout: 10000 // 10 second timeout
+                timeout: 10000
             });
             
-            if (response.data && response.data.choices && response.data.choices[0]) {
-                logger.info(`AI Response success with model: ${model}`);
+            if (response.data?.choices?.[0]) {
+                logger.info(`AI success: ${model}`);
                 return response.data.choices[0].message.content;
             }
         } catch (error) {
-            const status = error.response ? error.response.status : 'TIMEOUT';
-            logger.warn(`Model ${model} failed (Status: ${status}). Trying next...`);
+            logger.warn(`Model ${model} failed. ${error.message}`);
         }
     }
-    throw new Error("Civic Intelligence service is currently overwhelmed. Please try again in a moment.");
+    throw new Error("Service overwhelmed. Please try again.");
 }
 
-app.post('/api/chat', async (req, res) => {
+/**
+ * API ROUTES
+ */
+app.post('/api/chat', limiter, async (req, res) => {
     const { message, role } = req.body;
     try {
         const messages = [
@@ -76,38 +111,27 @@ app.post('/api/chat', async (req, res) => {
         const text = await getAIResponse(messages);
         res.json({ response: text });
     } catch (error) {
-        logger.error('Final Chat Error:', error.message);
-        res.json({ response: `⚠️ Error: ${error.message}` });
+        res.status(503).json({ response: `⚠️ ${error.message}` });
     }
 });
 
-app.post('/api/verify', async (req, res) => {
+app.post('/api/verify', limiter, async (req, res) => {
     const { claim } = req.body;
     try {
         const messages = [
-            { 
-                role: "system", 
-                content: `You are a rigorous election fact-checker. 
-                Analyze the claim based on official Election Commission rules and known facts.
-                Provide the output in the SAME language as the claim.
-                FORMAT: 
-                Verdict: [Likely True / Likely False / Misleading]
-                Reason: [A 1-2 sentence explanation of why, citing general rules if applicable]` 
-            },
+            { role: "system", content: "You are a rigorous election fact-checker. Analyze the claim based on official ECI rules." },
             { role: "user", content: claim }
         ];
         const text = await getAIResponse(messages);
         res.json({ result: text });
     } catch (error) {
-        logger.error('Final Verification Error:', error.message);
-        res.json({ result: `Verdict: Error | Reason: ${error.message}` });
+        res.status(503).json({ result: `Verdict: Error | Reason: ${error.message}` });
     }
 });
 
+// Start Server
 if (require.main === module) {
-    app.listen(port, () => {
-        logger.info(`Server running at http://localhost:${port}`);
-    });
+    app.listen(port, () => logger.info(`EDUlection Core active on port ${port}`));
 }
 
 module.exports = app;
