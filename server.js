@@ -28,14 +28,13 @@ let OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 
 /**
  * GOOGLE SECRET MANAGER INTEGRATION
- * Dynamically fetches secrets from GCP on startup for maximum security.
  */
 async function loadSecrets() {
     try {
         const [version] = await secretClient.accessSecretVersion({
             name: `projects/${process.env.GOOGLE_CLOUD_PROJECT || 'edulection'}/secrets/OPENROUTER_API_KEY/versions/latest`,
         });
-        OPENROUTER_API_KEY = version.payload.data.toString();
+        OPENROUTER_API_KEY = version.payload.data.toString().trim();
         logger.info("Successfully loaded API key from Google Secret Manager.");
     } catch (err) {
         logger.warn("Secret Manager unavailable, falling back to .env environment variables.");
@@ -63,10 +62,17 @@ app.use(express.json());
 app.use(express.static('public'));
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const SYSTEM_PROMPT = `You are EDUlection AI, a helpful civic assistant. Role: Voter/Officer. Tone: Neutral, educational, simple. Language: Matches user (En/Hi/Hinglish).`;
+const CHAT_SYSTEM_PROMPT = `You are EDUlection AI, a helpful civic assistant. Tone: Neutral, educational, simple. Matches user (En/Hi/Hinglish).`;
+
+const VERIFY_SYSTEM_PROMPT = `
+You are a rigorous election fact-checker. 
+IMPORTANT: Even if you don't have real-time news access, analyze claims based on general Election Commission of India (ECI) rules, Model Code of Conduct (MCC), and common sense. 
+If a claim sounds like a rumor (e.g., 'Voting is cancelled'), flag it as 'Likely False' and explain the standard official procedure. 
+Always provide a 'Verdict' and a short 'Reason'.
+`;
 
 /**
- * RESILIENT AI CORE (Tri-Model Fallback)
+ * RESILIENT AI CORE
  */
 async function getAIResponse(messages) {
     const models = ["google/gemini-flash-1.5", "google/gemini-pro-1.5", "openai/gpt-3.5-turbo"];
@@ -93,14 +99,11 @@ async function getAIResponse(messages) {
 
 // --- API ROUTES ---
 
-/**
- * CHAT ENDPOINT
- */
 app.post('/api/chat', limiter, async (req, res) => {
     const { message, role } = req.body;
     try {
         const text = await getAIResponse([
-            { role: "system", content: `${SYSTEM_PROMPT} Current User Role: ${role}` },
+            { role: "system", content: `${CHAT_SYSTEM_PROMPT} Current User Role: ${role}` },
             { role: "user", content: message }
         ]);
         res.json({ response: text });
@@ -109,14 +112,11 @@ app.post('/api/chat', limiter, async (req, res) => {
     }
 });
 
-/**
- * FACT-CHECK ENDPOINT
- */
 app.post('/api/verify', limiter, async (req, res) => {
     try {
         const text = await getAIResponse([
-            { role: "system", content: "You are a rigorous election fact-checker." },
-            { role: "user", content: req.body.claim }
+            { role: "system", content: VERIFY_SYSTEM_PROMPT },
+            { role: "user", content: `Claim to verify: ${req.body.claim}` }
         ]);
         res.json({ result: text });
     } catch (error) {
@@ -124,19 +124,16 @@ app.post('/api/verify', limiter, async (req, res) => {
     }
 });
 
-/**
- * NEURAL TEXT-TO-SPEECH ENDPOINT
- * Uses Google Cloud Neural voices for professional accessibility.
- */
 app.post('/api/tts', limiter, async (req, res) => {
     const { text } = req.body;
+    if (!text) return res.status(400).send("No text provided");
     try {
         const isHindi = text.match(/[\u0900-\u097F]/);
         const [response] = await ttsClient.synthesizeSpeech({
             input: { text },
             voice: { 
                 languageCode: isHindi ? 'hi-IN' : 'en-IN', 
-                name: isHindi ? 'hi-IN-Neural2-A' : 'en-IN-Neural2-B',
+                name: isHindi ? 'hi-IN-Wavenet-A' : 'en-IN-Wavenet-B',
                 ssmlGender: 'FEMALE' 
             },
             audioConfig: { audioEncoding: 'MP3' },
@@ -152,7 +149,7 @@ app.post('/api/tts', limiter, async (req, res) => {
 // Start Server
 if (require.main === module) {
     loadSecrets().then(() => {
-        app.listen(port, () => logger.info(`EDUlection Enterprise Active on port ${port}`));
+        app.listen(port, () => logger.info(`EDUlection Core Active on port ${port}`));
     });
 }
 

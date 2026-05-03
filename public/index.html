@@ -419,6 +419,7 @@
          * Falls back to browser speech if the API is unavailable.
          */
         const speakText = async (text) => {
+            console.log("🔊 Generating speech for:", text.substring(0, 30) + "...");
             try {
                 const response = await fetch('/api/tts', {
                     method: 'POST',
@@ -426,12 +427,12 @@
                     body: JSON.stringify({ text })
                 });
                 
-                if (!response.ok) throw new Error("TTS API failed");
+                if (!response.ok) throw new Error("TTS API returned " + response.status);
 
                 const blob = await response.blob();
                 const url = URL.createObjectURL(blob);
                 const audio = new Audio(url);
-                audio.play();
+                audio.oncanplaythrough = () => audio.play().catch(e => console.warn("Autoplay blocked", e));
             } catch (err) {
                 console.warn("Falling back to browser speech:", err);
                 if (!('speechSynthesis' in window)) return;
@@ -666,8 +667,16 @@
         });
 
         function selectBySlider(name) {
+            console.log("📍 Slider Select Request:", name);
             const sel = getEl('stateSelector');
-            if (sel) { sel.value = name; sel.dispatchEvent(new Event('change')); }
+            const label = getEl('activeStateLabel');
+            if (sel) { 
+                sel.value = name; 
+                if (label) label.textContent = name;
+                updateStateUI(name);
+                // Also trigger the change event for any listeners
+                sel.dispatchEvent(new Event('change')); 
+            }
         }
     </script>
 </body>
